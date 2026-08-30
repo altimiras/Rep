@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Formulario de Métrica — Cueca Chilena</title>
+<style>
+  :root{
+    --tierra:#8a5a3b;
+    --tierra-osc:#5e3c26;
+    --crema:#f6efe4;
+    --papel:#fffaf2;
+    --linea:#d8c9b0;
+    --ok:#4a7c59;
+    --falta:#b0522a;
+    --sobra:#a03b3b;
+    --rima-a:#c98a3f;
+    --rima-b:#3f7ca9;
+    --rima-c:#7a5ca6;
+    --texto:#3b2a1e;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    background:var(--crema);
+    font-family:Georgia, 'Iowan Old Style', serif;
+    color:var(--texto);
+    padding-bottom:60px;
+  }
+  header{
+    background:var(--tierra-osc);
+    color:var(--papel);
+    padding:22px 18px 18px;
+    text-align:center;
+  }
+  header h1{
+    margin:0 0 4px;
+    font-size:1.4rem;
+    letter-spacing:0.5px;
+  }
+  header p{
+    margin:0;
+    font-size:0.85rem;
+    opacity:0.85;
+    font-family:-apple-system,sans-serif;
+  }
+  .zapateo{
+    text-align:center;
+    font-size:0.75rem;
+    letter-spacing:3px;
+    color:var(--rima-a);
+    margin-top:8px;
+  }
+  main{
+    max-width:640px;
+    margin:0 auto;
+    padding:16px;
+  }
+  .estrofa{
+    background:var(--papel);
+    border:1px solid var(--linea);
+    border-radius:10px;
+    margin-bottom:22px;
+    overflow:hidden;
+    box-shadow:0 2px 6px rgba(94,60,38,0.08);
+  }
+  .estrofa-titulo{
+    background:var(--tierra);
+    color:var(--papel);
+    padding:10px 14px;
+    font-family:-apple-system,sans-serif;
+  }
+  .estrofa-titulo h2{
+    margin:0;
+    font-size:1rem;
+  }
+  .estrofa-titulo span{
+    display:block;
+    font-size:0.72rem;
+    opacity:0.9;
+    margin-top:2px;
+  }
+  .linea-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:10px 12px;
+    border-bottom:1px solid var(--linea);
+  }
+  .linea-row:last-child{border-bottom:none}
+  .rima-marca{
+    width:26px;
+    height:26px;
+    border-radius:50%;
+    flex:0 0 auto;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:0.75rem;
+    font-weight:bold;
+    font-family:-apple-system,sans-serif;
+    color:#fff;
+  }
+  .rima-libre{
+    background:transparent;
+    color:var(--linea);
+    border:1.5px dashed var(--linea);
+  }
+  .campo{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    gap:3px;
+  }
+  input[type=text]{
+    font-family:Georgia, serif;
+    font-size:1rem;
+    padding:8px 10px;
+    border:1.5px solid var(--linea);
+    border-radius:6px;
+    background:#fffefb;
+    color:var(--texto);
+  }
+  input[type=text]:focus{
+    outline:none;
+    border-color:var(--tierra);
+  }
+  .meta{
+    display:flex;
+    justify-content:space-between;
+    font-family:-apple-system,sans-serif;
+    font-size:0.72rem;
+    color:#8a7websa;
+    padding:0 2px;
+  }
+  .conteo{
+    font-weight:bold;
+  }
+  .conteo.ok{color:var(--ok)}
+  .conteo.falta{color:var(--falta)}
+  .conteo.sobra{color:var(--sobra)}
+  .objetivo{color:#9a8b74}
+
+  .pausa-instrumental{
+    text-align:center;
+    padding:8px;
+    font-family:-apple-system,sans-serif;
+    font-size:0.72rem;
+    color:#a08a6a;
+    font-style:italic;
+    background:repeating-linear-gradient(
+      90deg, transparent, transparent 6px, var(--linea) 6px, var(--linea) 8px
+    );
+  }
+
+  .leyenda{
+    max-width:640px;
+    margin:0 auto 20px;
+    padding:0 16px;
+    font-family:-apple-system,sans-serif;
+    font-size:0.78rem;
+    color:#6b5a44;
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+  }
+  .leyenda span{display:flex;align-items:center;gap:5px}
+  .dot{width:12px;height:12px;border-radius:50%;display:inline-block}
+
+  .preview-box{
+    max-width:640px;
+    margin:0 auto;
+    padding:16px;
+  }
+  .preview-toggle{
+    width:100%;
+    padding:12px;
+    background:var(--tierra-osc);
+    color:var(--papel);
+    border:none;
+    border-radius:8px;
+    font-family:-apple-system,sans-serif;
+    font-size:0.95rem;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .preview-toggle:active{background:var(--tierra)}
+  #previewArea{
+    display:none;
+    margin-top:10px;
+    background:var(--papel);
+    border:1px solid var(--linea);
+    border-radius:8px;
+    padding:14px;
+  }
+  #previewText{
+    width:100%;
+    min-height:180px;
+    font-family:'Courier New', monospace;
+    font-size:0.85rem;
+    border:1px solid var(--linea);
+    border-radius:6px;
+    padding:10px;
+    background:#fffefb;
+    color:var(--texto);
+    resize:vertical;
+  }
+  .copiar-btn{
+    margin-top:8px;
+    padding:9px 14px;
+    background:var(--rima-b);
+    color:#fff;
+    border:none;
+    border-radius:6px;
+    font-family:-apple-system,sans-serif;
+    font-size:0.85rem;
+    cursor:pointer;
+  }
+  .nota{
+    max-width:640px;
+    margin:0 auto 30px;
+    padding:0 16px;
+    font-family:-apple-system,sans-serif;
+    font-size:0.75rem;
+    color:#8a7a63;
+    line-height:1.5;
+  }
+
+  /* ANEXO: prompt Suno */
+  .anexo{
+    max-width:640px;
+    margin:10px auto 40px;
+    padding:0 16px;
+  }
+  .anexo-cabecera{
+    background:var(--tierra-osc);
+    color:var(--papel);
+    padding:14px 16px;
+    border-radius:10px 10px 0 0;
+    font-family:-apple-system,sans-serif;
+  }
+  .anexo-cabecera h2{margin:0 0 3px;font-size:1.05rem}
+  .anexo-cabecera span{font-size:0.75rem;opacity:0.85}
+  .anexo-cuerpo{
+    background:var(--papel);
+    border:1px solid var(--linea);
+    border-top:none;
+    border-radius:0 0 10px 10px;
+    padding:16px;
+  }
+  .controles{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    margin-bottom:14px;
+    font-family:-apple-system,sans-serif;
+  }
+  .control-item{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+  }
+  .control-item label{
+    font-size:0.72rem;
+    color:#8a7a63;
+    font-weight:600;
+  }
+  .control-item select{
+    padding:8px 6px;
+    border:1.5px solid var(--linea);
+    border-radius:6px;
+    background:#fffefb;
+    font-family:-apple-system,sans-serif;
+    font-size:0.85rem;
+    color:var(--texto);
+  }
+  .check-row{
+    grid-column:1 / -1;
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    margin-top:2px;
+  }
+  .check-row label{
+    display:flex;
+    align-items:center;
+    gap:5px;
+    font-size:0.8rem;
+    font-family:-apple-system,sans-serif;
+    background:var(--crema);
+    padding:5px 9px;
+    border-radius:14px;
+    border:1px solid var(--linea);
+  }
+  #promptFinal{
+    width:100%;
+    min-height:70px;
+    font-family:'Courier New', monospace;
+    font-size:0.85rem;
+    border:1.5px solid var(--tierra);
+    border-radius:6px;
+    padding:10px;
+    background:#fffefb;
+    color:var(--texto);
+    resize:vertical;
+  }
+  .tabla-tags{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:16px;
+    font-family:-apple-system,sans-serif;
+    font-size:0.78rem;
+  }
+  .tabla-tags th{
+    background:var(--tierra);
+    color:var(--papel);
+    text-align:left;
+    padding:7px 8px;
+  }
+  .tabla-tags td{
+    padding:7px 8px;
+    border-bottom:1px solid var(--linea);
+    vertical-align:top;
+  }
+  .tabla-tags tr:nth-child(even) td{background:#fbf6ec}
+  .tag-code{
+    font-family:'Courier New', monospace;
+    font-size:0.76rem;
+    color:var(--tierra-osc);
+    font-weight:600;
+  }
+  .aviso-tags{
+    font-family:-apple-system,sans-serif;
+    font-size:0.72rem;
+    color:#a08a6a;
+    margin-top:10px;
+    line-height:1.5;
+    font-style:italic;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Formulario de métrica — Cueca chilena</h1>
+  <p>Escribe cada verso. El conteo de sílabas se ajusta solo (con sinalefa aproximada).</p>
+  <div class="zapateo">♪ · · ♪ · · ♪</div>
+</header>
+
+<div class="leyenda">
+  <span><span class="dot" style="background:var(--rima-a)"></span> riman entre sí (grupo A)</span>
+  <span><span class="dot" style="background:var(--rima-b)"></span> riman entre sí (grupo B)</span>
+  <span><span class="dot" style="background:var(--rima-c)"></span> riman entre sí (grupo C)</span>
+  <span><span class="dot" style="border:1.5px dashed var(--linea);background:transparent"></span> verso libre</span>
+</div>
+
+<main>
+
+  <!-- CUARTETA -->
+  <div class="estrofa">
+    <div class="estrofa-titulo">
+      <h2>1. Cuarteta</h2>
+      <span>4 versos de 8 sílabas · riman los versos 2 y 4 (asonante)</span>
+    </div>
+    <div id="cuarteta"></div>
+  </div>
+
+  <div class="pausa-instrumental">— pausa instrumental / rasgueo (el "aro") —</div>
+
+  <!-- SEGUIDILLA -->
+  <div class="estrofa">
+    <div class="estrofa-titulo">
+      <h2>2. Seguidilla</h2>
+      <span>Patrón 7-5-7-5 sílabas · riman los versos 2 y 4 (asonante)</span>
+    </div>
+    <div id="seguidilla"></div>
+  </div>
+
+  <div class="pausa-instrumental">— pausa instrumental / zapateo —</div>
+
+  <!-- PAREADO -->
+  <div class="estrofa">
+    <div class="estrofa-titulo">
+      <h2>3. Pareado (el "dato" / remate)</h2>
+      <span>2 versos, 7 y 5 sílabas · riman entre sí</span>
+    </div>
+    <div id="pareado"></div>
+  </div>
+
+</main>
+
+<div class="preview-box">
+  <button class="preview-toggle" onclick="togglePreview()">Ver letra armada para pegar en Suno</button>
+  <div id="previewArea">
+    <textarea id="previewText" readonly></textarea>
+    <button class="copiar-btn" onclick="copiarPreview()">Copiar texto</button>
+  </div>
+</div>
+
+<p class="nota">
+  Nota: el conteo de sílabas es una aproximación (sinalefa simple entre palabras). En cueca, si un verso termina en palabra aguda, esa última sílaba cuenta doble a efectos métricos, así que un verso "de 8" puede sonar bien con 7 sílabas reales si termina en palabra aguda — no te obsesiones si el número queda a ±1, escúchalo en voz alta.
+</p>
+
+<div class="anexo">
+  <div class="anexo-cabecera">
+    <h2>Anexo — Prompt de estilo para Suno</h2>
+    <span>Ajusta las variaciones y copia el prompt armado</span>
+  </div>
+  <div class="anexo-cuerpo">
+
+    <div class="controles">
+      <div class="control-item">
+        <label>Voz</label>
+        <select id="selVoz">
+          <option value="Spanish male vocals">Masculina</option>
+          <option value="Spanish female vocals">Femenina</option>
+          <option value="Spanish male and female vocals, call and response">Dúo (macho y dama)</option>
+        </select>
+      </div>
+
+      <div class="control-item">
+        <label>Tono de la voz</label>
+        <select id="selTono">
+          <option value="">— sin especificar —</option>
+          <option value="deep, baritone voice">Grave</option>
+          <option value="bright, high-pitched voice">Agudo</option>
+          <option value="raspy, husky voice">Rasposo / ronco</option>
+        </select>
+      </div>
+
+      <div class="control-item">
+        <label>Variante regional</label>
+        <select id="selVariante">
+          <option value="cueca chilena">Cueca chilena (genérica)</option>
+          <option value="cueca chilena, cueca brava, urban raw production">Cueca brava (urbana)</option>
+          <option value="cueca chilena, cueca campesina, rustic acoustic production">Cueca campesina (rural)</option>
+          <option value="cueca chilena, cueca chilota, accordion-led">Cueca chilota</option>
+        </select>
+      </div>
+
+      <div class="control-item">
+        <label>Ánimo</label>
+        <select id="selAnimo">
+          <option value="joyful, festive">Alegre / festivo</option>
+          <option value="nostalgic, bittersweet">Nostálgico</option>
+          <option value="playful, mischievous">Pícaro / juguetón</option>
+        </select>
+      </div>
+
+      <div class="control-item">
+        <label>Tempo</label>
+        <select id="selTempo">
+          <option value="">— sin especificar —</option>
+          <option value="uptempo">Rápido (más bailable)</option>
+          <option value="mid-tempo">Medio</option>
+          <option value="slow">Lento (cueca larga)</option>
+        </select>
+      </div>
+
+      <div class="control-item">
+        <label>Ritmo base</label>
+        <select id="selRitmo">
+          <option value="6/8 hemiola rhythm">6/8 con hemiola (estándar)</option>
+          <option value="6/8 hemiola rhythm, zapateo percussion">6/8 con hemiola + zapateo marcado</option>
+        </select>
+      </div>
+
+      <div class="check-row" id="checkInstrumentos">
+        <label><input type="checkbox" value="folk guitar strumming" checked> Guitarra</label>
+        <label><input type="checkbox" value="accordion"> Acordeón</label>
+        <label><input type="checkbox" value="harp"> Arpa</label>
+        <label><input type="checkbox" value="tambourine"> Pandero</label>
+        <label><input type="checkbox" value="cajon percussion"> Cajón</label>
+      </div>
+    </div>
+
+    <textarea id="promptFinal" readonly></textarea>
+    <button class="copiar-btn" onclick="copiarPrompt()">Copiar prompt</button>
+
+    <table class="tabla-tags">
+      <thead>
+        <tr><th>Etiqueta</th><th>Efecto en la cueca</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="tag-code">Spanish male / female vocals</td><td>Define el género de la voz principal</td></tr>
+        <tr><td class="tag-code">call and response</td><td>Simula el diálogo cantado macho/dama típico</td></tr>
+        <tr><td class="tag-code">deep, baritone voice</td><td>Voz más grave y oscura</td></tr>
+        <tr><td class="tag-code">bright, high-pitched voice</td><td>Voz más aguda y clara</td></tr>
+        <tr><td class="tag-code">cueca brava</td><td>Variante urbana, más rasgueada y "chora", sin acordeón</td></tr>
+        <tr><td class="tag-code">cueca campesina</td><td>Variante rural, sonido más crudo/orgánico</td></tr>
+        <tr><td class="tag-code">cueca chilota</td><td>Variante de Chiloé, más protagonismo del acordeón</td></tr>
+        <tr><td class="tag-code">accordion</td><td>Aporta el color más "campesino" o chilote</td></tr>
+        <tr><td class="tag-code">harp</td><td>Color más folclórico/tradicional</td></tr>
+        <tr><td class="tag-code">tambourine / cajon percussion</td><td>Refuerza el pulso y el zapateo</td></tr>
+        <tr><td class="tag-code">uptempo / slow</td><td>Cueca bailable rápida vs. "cueca larga" más pausada</td></tr>
+        <tr><td class="tag-code">nostalgic, bittersweet</td><td>Ánimo menos común, cuecas de despedida o añoranza</td></tr>
+      </tbody>
+    </table>
+
+    <p class="aviso-tags">
+      Estas combinaciones son puntos de partida razonables, no reglas fijas — Suno interpreta el conjunto de etiquetas como un todo, así que conviene probar y ajustar según el resultado real.
+    </p>
+
+  </div>
+</div>
+
+<script>
+const VOCALES = "aeiouáéíóúüAEIOUÁÉÍÓÚÜ";
+
+function esVocal(c){ return VOCALES.indexOf(c) !== -1; }
+
+function limpiar(palabra){
+  return palabra.replace(/[.,;:!¡?¿"'«»()]/g,"");
+}
+
+function silabasPalabra(palabra){
+  palabra = limpiar(palabra).toLowerCase();
+  if(!palabra) return 0;
+  // cuenta grupos de vocales consecutivas (incluye 'y' como vocal cuando no inicia palabra junto a vocal)
+  let normal = palabra.replace(/y/g, "i");
+  let grupos = normal.match(/[aeiouáéíóúü]+/g);
+  return grupos ? grupos.length : 0;
+}
+
+function empiezaConVocal(palabra){
+  palabra = limpiar(palabra).toLowerCase();
+  if(palabra.startsWith("h")) palabra = palabra.slice(1);
+  return palabra.length>0 && esVocal(palabra[0]);
+}
+
+function terminaConVocal(palabra){
+  palabra = limpiar(palabra).toLowerCase();
+  return palabra.length>0 && esVocal(palabra[palabra.length-1]);
+}
+
+function contarSilabas(linea){
+  let palabras = linea.trim().split(/\s+/).filter(p=>p.length>0);
+  if(palabras.length===0) return 0;
+  let total = 0;
+  let prevTerminaVocal = false;
+  for(let p of palabras){
+    let s = silabasPalabra(p);
+    total += s;
+    if(prevTerminaVocal && empiezaConVocal(p)){
+      total -= 1; // sinalefa
+    }
+    prevTerminaVocal = terminaConVocal(p);
+  }
+  return total;
+}
+
+// Definición de estrofas: [objetivo silabas, grupo rima o null]
+const ESTROFAS = {
+  cuarteta: [
+    {obj:8, grupo:null},
+    {obj:8, grupo:'a'},
+    {obj:8, grupo:null},
+    {obj:8, grupo:'a'}
+  ],
+  seguidilla: [
+    {obj:7, grupo:null},
+    {obj:5, grupo:'b'},
+    {obj:7, grupo:null},
+    {obj:5, grupo:'b'}
+  ],
+  pareado: [
+    {obj:7, grupo:'c'},
+    {obj:5, grupo:'c'}
+  ]
+};
+
+const COLORES = { a:'var(--rima-a)', b:'var(--rima-b)', c:'var(--rima-c)' };
+
+function construirEstrofa(id, config){
+  const contenedor = document.getElementById(id);
+  config.forEach((linea, idx)=>{
+    const row = document.createElement('div');
+    row.className = 'linea-row';
+
+    const marca = document.createElement('div');
+    marca.className = 'rima-marca' + (linea.grupo ? '' : ' rima-libre');
+    if(linea.grupo){
+      marca.style.background = COLORES[linea.grupo];
+      marca.textContent = linea.grupo.toUpperCase();
+    } else {
+      marca.textContent = '—';
+    }
+    row.appendChild(marca);
+
+    const campo = document.createElement('div');
+    campo.className = 'campo';
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = `Verso ${idx+1}`;
+    input.dataset.obj = linea.obj;
+    input.id = `${id}-${idx}`;
+
+    const meta = document.createElement('div');
+    meta.className = 'meta';
+    const objetivo = document.createElement('span');
+    objetivo.className = 'objetivo';
+    objetivo.textContent = `objetivo: ${linea.obj} sílabas`;
+    const conteo = document.createElement('span');
+    conteo.className = 'conteo';
+    conteo.id = `${id}-count-${idx}`;
+    conteo.textContent = '0';
+
+    meta.appendChild(objetivo);
+    meta.appendChild(conteo);
+
+    campo.appendChild(input);
+    campo.appendChild(meta);
+    row.appendChild(campo);
+
+    contenedor.appendChild(row);
+
+    input.addEventListener('input', ()=>{
+      const n = contarSilabas(input.value);
+      conteo.textContent = `${n} sílabas`;
+      conteo.className = 'conteo';
+      if(n === linea.obj){ conteo.classList.add('ok'); }
+      else if(n < linea.obj){ conteo.classList.add('falta'); }
+      else { conteo.classList.add('sobra'); }
+      actualizarPreview();
+    });
+  });
+}
+
+construirEstrofa('cuarteta', ESTROFAS.cuarteta);
+construirEstrofa('seguidilla', ESTROFAS.seguidilla);
+construirEstrofa('pareado', ESTROFAS.pareado);
+
+function valorLinea(id, idx){
+  const el = document.getElementById(`${id}-${idx}`);
+  return el ? el.value.trim() : '';
+}
+
+function actualizarPreview(){
+  let texto = '[Verse]\n';
+  ESTROFAS.cuarteta.forEach((_,i)=>{
+    const v = valorLinea('cuarteta', i);
+    if(v) texto += v + '\n';
+  });
+  texto += '\n[Verse]\n';
+  ESTROFAS.seguidilla.forEach((_,i)=>{
+    const v = valorLinea('seguidilla', i);
+    if(v) texto += v + '\n';
+  });
+  texto += '\n[Chorus]\n';
+  ESTROFAS.pareado.forEach((_,i)=>{
+    const v = valorLinea('pareado', i);
+    if(v) texto += v + '\n';
+  });
+  document.getElementById('previewText').value = texto;
+}
+
+function togglePreview(){
+  const area = document.getElementById('previewArea');
+  area.style.display = area.style.display === 'block' ? 'none' : 'block';
+  actualizarPreview();
+}
+
+function copiarPreview(){
+  const ta = document.getElementById('previewText');
+  ta.select();
+  ta.setSelectionRange(0, 999999);
+  try{
+    document.execCommand('copy');
+  }catch(e){}
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(ta.value).catch(()=>{});
+  }
+}
+
+function armarPrompt(){
+  const variante = document.getElementById('selVariante').value;
+  const ritmo = document.getElementById('selRitmo').value;
+  const animo = document.getElementById('selAnimo').value;
+  const tempo = document.getElementById('selTempo').value;
+  const voz = document.getElementById('selVoz').value;
+  const tono = document.getElementById('selTono').value;
+
+  const instrumentos = Array.from(
+    document.querySelectorAll('#checkInstrumentos input[type=checkbox]:checked')
+  ).map(el => el.value);
+
+  const partes = [variante, ...instrumentos, ritmo, animo];
+  if(tempo) partes.push(tempo);
+  partes.push(voz);
+  if(tono) partes.push(tono);
+
+  document.getElementById('promptFinal').value = partes.filter(Boolean).join(', ');
+}
+
+function copiarPrompt(){
+  const ta = document.getElementById('promptFinal');
+  ta.select();
+  ta.setSelectionRange(0, 999999);
+  try{ document.execCommand('copy'); }catch(e){}
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(ta.value).catch(()=>{});
+  }
+}
+
+// listeners para reconstruir el prompt al cambiar cualquier control
+['selVoz','selTono','selVariante','selAnimo','selTempo','selRitmo'].forEach(id=>{
+  document.getElementById(id).addEventListener('change', armarPrompt);
+});
+document.querySelectorAll('#checkInstrumentos input[type=checkbox]').forEach(el=>{
+  el.addEventListener('change', armarPrompt);
+});
+armarPrompt(); // construir el prompt inicial al cargar
+</script>
+
+</body>
+</html>
