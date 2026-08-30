@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Buscador v9 - Rimas primero</title>
+<style>
+:root{--p:#5b5cff;--bg:#f6f7fb;--c:#fff;--b:#e5e7eb;--m:#6b7280}
+*{box-sizing:border-box}body{font-family:Inter,system-ui,sans-serif;background:var(--bg);max-width:900px;margin:0 auto;padding:20px 16px 70px}
+h1{margin:0;font-size:22px}.sub{color:var(--m);font-size:13px;margin:6px 0 14px}
+.search{display:flex;gap:8px;background:var(--c);border:1px solid var(--b);border-radius:14px;padding:10px}
+input{flex:1;border:1px solid var(--b);border-radius:10px;padding:12px 14px;font-size:16px;outline:none}input:focus{border-color:var(--p)}
+button{background:var(--p);color:#fff;border:0;border-radius:10px;padding:12px 18px;font-weight:700;cursor:pointer}
+.opts{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.opts label{display:flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--b);padding:7px 12px;border-radius:999px;font-size:12px;cursor:pointer}
+.opts label.active{border-color:var(--p);background:#eef0ff}
+.meta{font-size:12px;color:var(--m);margin:8px 2px;display:flex;gap:8px}
+.card{background:var(--c);border:1px solid var(--b);border-radius:14px;padding:14px;margin-top:12px}
+.card h3{margin:0 0 10px;font-size:14px;display:flex;justify-content:space-between;align-items:center}
+.badge{font-size:11px;padding:3px 8px;border-radius:999px;font-weight:700}
+.b1{background:#e0e7ff;color:#3730a3}.b2{background:#fef3c7;color:#92400e}.b3{background:#dcfce7;color:#166534}.b4{background:#f3f4f6;color:#4b5563}.bR{background:#ffe4e6;color:#9f1239}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:6px;list-style:none;padding:0;margin:0}
+.grid li{background:#f9fafb;border:1px solid #eef2f7;border-radius:9px;padding:8px 10px;font-size:14px;cursor:pointer;display:flex;justify-content:space-between}
+.grid li:hover{background:#fff;border-color:var(--p)}
+.chile{border-left:3px solid #e11d48}
+.sc{font-size:11px;color:#9ca3af}
+.order{font-size:11px;background:#111827;color:#fff;padding:2px 6px;border-radius:6px;margin-right:6px}
+</style>
+</head>
+<body>
+<h1>Buscador v9 — Rimas primero 🇪🇸</h1>
+<div class="sub">Orden corregido: 1º rimas consonantes, 2º rimas por terminación, 3º rimas con mismo significado, 4º sinónimos reales. Sin palabras inventadas.</div>
+
+<div class="search">
+<input id="q" placeholder="Ej: casa, amor, tiempo, luz, corazón, belleza...">
+<button id="btn" onclick="buscar()">Buscar</button>
+</div>
+
+<div class="opts">
+<label id="labES" class="active"><input type="radio" name="modo" value="es" checked onchange="updateMode()"> Español neutro RAE</label>
+<label id="labCL"><input type="radio" name="modo" value="cl" onchange="updateMode()"> + Chilenismos (opcional)</label>
+</div>
+<div class="meta"><span id="status">—</span><span id="time">—</span></div>
+
+<!-- ORDEN NUEVO: RIMAS PRIMERO -->
+<div id="c1" class="card" style="display:none"><h3><span><span class="order">1</span> Rima consonante perfecta</span> <span id="n1" class="badge b1">0</span></h3><ul id="l1" class="grid"></ul></div>
+<div id="c2" class="card" style="display:none"><h3><span><span class="order">2</span> Rima por terminación <span style="font-weight:400;color:#6b7280" id="term"></span></span> <span id="n2" class="badge b2">0</span></h3><ul id="l2" class="grid"></ul></div>
+<div id="c3" class="card" style="display:none"><h3><span><span class="order">3</span> Riman + MISMO significado</span> <span id="n3" class="badge b3">0</span></h3><ul id="l3" class="grid"></ul><div style="font-size:11px;color:#6b7280;margin-top:6px">Intersección: palabras que riman Y son sinónimas de verdad</div></div>
+<div id="c4" class="card" style="display:none"><h3><span><span class="order">4</span> Sinónimos reales (no asociados)</span> <span id="n4" class="badge b4">0</span></h3><ul id="l4" class="grid"></ul></div>
+<div id="cCL" class="card" style="display:none;border-color:#fecdd3"><h3><span>🇨🇱 Chilenismos que riman</span> <span id="nCL" class="badge bR">0</span></h3><ul id="lCL" class="grid"></ul></div>
+
+<p id="msg" style="color:#6b7280;font-size:13px;margin-top:14px"></p>
+
+<script>
+const DICCIONARIO_ES = new Set(`a abismo abrazo abrir abuela abuelo abundancia acabar acariciar accion aceite acero acoger acompañar aconsejar acordar acordeon actor acuario acuarela acudir acuerdo acusar adaptar adeudo adios adivinar admirar adobe adolescencia adorar adorno aduana afecto aficion afortunado agua aguila aire ajo ajuste alabanza alba alboroto alcalde aldea alegre alegria alejar aleman aliento alma almohada almuerzo altura amable amanecer amar amargo ambiente amigo amor ancla andar angel anhelo anillo animal anochecer ansiedad antecedente antiguo antojo año apagar aparecer apasionado apellido aprecio aprender aptitud arbol arco arena arpa arreglar arrepentir arroz arte articulo artista asamblea asar ascenso asombro aspecto aspero aspiracion astucia atardecer atreverse audaz aumento aula aura autor auxilio avanzar aventura ave avena aviso ayer ayuda azar azotea azul bailar bajo balada balanza balcon balon bandera bañera barba barco barrera barrio barro bastante basura batalla belleza bendito besar beso biblioteca bien bienestar blanco blusa boca bodega bolsa bondad bonito borde bosque bota botella bramar brasa brazo breve brillar brisa broma broche brujula bueno busqueda burbuja buscar cabaña cabeza cabo cactus cada cadena caer cafe caida caja cal calma calor cama camino caminar camisa campaña campo cancion cansancio cantar canto caña capa capaz cara caramelo caricia cariño carne caro carpintero carta casa cascada caso castaño castillo casualidad catarata causa cautivo cebra cena ceniza centro cepillo cerca cerro certeza cesar cesped chispa cielo ciencia cien cierre cifra cigarra cima cinco cinta circo cita ciudad claro clase clavo clima cobijo cocina cofre cojin cola colina collar color comarca comedia comer comida comienzo compañia comparar compartir compas completo comprender concha concierto confianza confin conocer consejo consuelo contar contemplar corazon coraje corona corteza cosa cosecha costa costumbre craneo crear crecer crepusculo cristal cruz cuadro cuaderno cuerpo cuento cuerda cueva cuidado cumbre cumplir cuna curiosidad curso curva dama danza dar dadiva debajo deber debil decada decir declarar dedo defecto defensa delicia delgado demorar dentro deporte dejar deleite derramar desaire desamor desierto deseo despertar destello destino detalle dia dialogo dibujo dicha diente diferencia dificil digno diluvio dios direccion discurso diseñar distancia distinto divino dolor domingo donde dorado dormir drama dulce dueño dulzura durazno eco edad efecto ejemplo ejercer elixir ella embeleso emocion empezar encanto encina enemigo energia engaño enojo ensueño entender entero entrada entraña envejecer envidia epoca equilibrio error escalera escarcha escoger esconder escribir escuchar escudo escuela escultura esencia esfuerzo espacio esperanza espejo esperar espiritu esplendor esposa esquina estancia estar estrella estilo estela eterno eureka evocar exacto examen existir exito experiencia explicar explorar fabula facil fama familia famoso fantasia faro farol fatiga favor fecha felicidad feliz feria fervor fiesta figura fin fino firmeza flama flauta flecha flor foco fogata fondo forma fortuna fragancia fragil fragua fraile frase fresa fresco frente frio fruto fuego fuente fuerza fulgor fundar furia futuro gala galaxia gallo ganas garza gato generoso gente gesto gigante giro gitano gloria golondrina gota gozo gracia grandeza grano gris grito guante guardia guerra guia guitarra gusto habilidad habla hablar hada halo hallar hamaca hambre harina hazaña helecho herida hermoso hielo hierro hijo hilo himno historia hogar hoguera hoja hombre hombro honestidad honor hora horizonte hormiga hoy huella humano humo idea ideal idioma idolo ilusion imaginar iman imperio incienso infinito ingenio inocencia insomnio instante intento invierno iris isla jardin jazmin joven joya juego juez juglar julio jungla justo juventud laberinto labio labor lado ladrillo lagrima laguna lamento lampara lana lanza lapiz largo laser latido laurel lazo leal lecho lectura lejos lengua letra levantar leyenda libertad libro ligero lima limon lindo linterna liso llanura llave lluvia lobo locura logro loma loto lucero lucha luego lugar luna luz madera madre madrugada magia magnolia maiz maleta mama manantial mano mañana mar maravilla marca marea margen mariposa marmol martirio masa mata matiz mayor mecer mediodia meditar mejilla melancolia melodia memoria mercado mes mesa mirada misterio mitad moda modo molino momento moneda montaña moral morada morir mosca motivo muelle muerte mujer mundo muralla murmullo muro musica nacer nada nadie naranja nariz natural naturaleza navio neblina necesidad nervio niebla nieve niño noche nostalgia nota nube nudo nuevo numero oasis obra ocaso oceano ojo ola olivo olvido onda oro orquesta otoño pacto padre paisaje pajaro palabra palma paloma pan papel par paraiso pared parque pasion pasto paz pecho peldaño peligro pelo pena pensamiento pequeño perder perdon perla perro persona pesar petalo piano piedra piel pino pintura pisada placer planeta plata playa plaza pluma pobreza poesia poeta polvo portal pozo pradera prado precioso pregunta premio primavera primero promesa profundo pulso pureza queja querer quimera rabia raiz rama ramo rayo raza razon recuerdo refugio regalo reina relampago reloj remedio reposo resplandor resto retoño retrato reunion rey riachuelo rima rincon rio risa roble roca rojo romero rosa rostro rubi rumor saber sabor sagrado sal sala salir saludo salvaje sangre santo sauce seda selva semilla sendero sentimiento serenata sereno siembra siempre sierra silencio silla sin sincero sirena sol soledad sombra sombrero soñar sonrisa sosiego suave sueño suerte suspiro tabla talento tambor tarde taza tempestad templo ternura tesoro tiempo tienda tierra timidez tono torre trabajo travesia trebol tristeza triunfo trueno umbral universo valle valor vapor ventana ventura verano vereda verdad verso vida vidrio viento vino virtud vivir vuelo zapato`.split(/\s+/).map(w=>w.normalize('NFD').replace(/[\u0300-\u036f]/g,'')));
+
+const CHILENISMOS = {fome:["aburrido","latero"],carrete:["fiesta","juerga"],pololo:["novio"],polola:["novia"],weon:["amigo"],bacan:["genial"],piola:["tranquilo"],cuatico:["intenso"],penca:["malo"],copete:["trago"],curado:["borracho"],caña:["resaca"],cahuin:["chisme"],guagua:["bebé"],cabro:["niño"],pega:["trabajo"],luca:["mil pesos"],altiro:["enseguida"],fomeque:["aburrido"]};
+const DICC_CL = new Set(Object.keys(CHILENISMOS).map(w=>w.normalize('NFD').replace(/[\u0300-\u036f]/g,'')));
+
+const SINONIMOS_CURADOS = {
+"casa":["hogar","vivienda","morada","domicilio"],
+"mesa":["escritorio","mostrador"],
+"perro":["can","canino"],
+"gato":["felino","minino"],
+"agua":["líquido"],
+"amor":["cariño","afecto","querencia","pasión"],
+"corazón":["alma","pecho"],
+"belleza":["hermosura","lindura","gracia"],
+"cielo":["firmamento","paraíso"],
+"luz":["claridad","resplandor","brillo"],
+"vida":["existencia","vivencia"],
+"tiempo":["momento","época","lapso"],
+"tristeza":["pena","melancolía","pesadumbre"],
+"alegría":["felicidad","gozo","júbilo"],
+"camino":["sendero","ruta","senda","vía"],
+"mundo":["planeta","orbe","universo"],
+"silencio":["quietud","calma","sosiego"],
+"sueño":["anhelo","ilusión","ensueño"],
+"noche":["oscuridad","tiniebla"],
+"alma":["espíritu","esencia"],
+"fuego":["llama","hoguera","lumbre"],
+"mar":["océano","piélago"],
+"viento":["brisa","aire","soplo"],
+"fome":["aburrido","latero","pajero"],
+"carrete":["fiesta","juerga","reventón"],
+"pololo":["novio","pareja"],
+"bacán":["genial","estupendo"],
+"pega":["trabajo","empleo"],
+};
+
+const $=id=>document.getElementById(id);
+const norm=s=>s.toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+const cache=new Map();
+
+function esEspanol(w, modo){
+  const n=norm(w);
+  if(n.length<2) return false;
+  if(/[^a-záéíóúñü ]/.test(w.toLowerCase())) return false;
+  if(modo==='cl' && DICC_CL.has(n)) return true;
+  return DICCIONARIO_ES.has(n);
+}
+
+async function fetchES(url){
+  if(cache.has(url)) return cache.get(url);
+  try{ const r=await fetch(url); const j=await r.json(); cache.set(url,j); return j; }catch{ return []; }
+}
+
+function updateMode(){
+  document.querySelectorAll('.opts label').forEach(l=>l.classList.remove('active'));
+  const modo=document.querySelector('input[name="modo"]:checked').value;
+  $(modo==='es'?'labES':'labCL').classList.add('active');
+  if($('q').value) buscar();
+}
+
+async function buscar(){
+  const raw=$('q').value.trim(); if(!raw) return;
+  const modo=document.querySelector('input[name="modo"]:checked').value;
+  const t0=performance.now();
+  $('btn').textContent='...'; $('btn').disabled=true;
+  ['c1','c2','c3','c4','cCL'].forEach(id=>$(id).style.display='none');
+  $('status').textContent='Buscando rimas...';
+
+  const n=norm(raw);
+  const suf3=n.slice(-3), suf2=n.slice(-2);
+  $('term').textContent=`*${suf3}`;
+
+  // SOLO CONSULTAS DE RIMA + SINONIMOS REALES (rel_syn), NO ml
+  const urls={
+    rhy: `https://api.datamuse.com/words?rel_rhy=${encodeURIComponent(raw)}&v=es&max=100`,
+    rhy2: `https://api.datamuse.com/words?rel_rhy=${encodeURIComponent(n)}&v=es&max=100`,
+    pat3: `https://api.datamuse.com/words?sp=*${encodeURIComponent(suf3)}&v=es&max=150`,
+    pat2: `https://api.datamuse.com/words?sp=*${encodeURIComponent(suf2)}&v=es&max=150`,
+    syn: `https://api.datamuse.com/words?rel_syn=${encodeURIComponent(raw)}&v=es&max=80`,
+    syn2: `https://api.datamuse.com/words?rel_syn=${encodeURIComponent(n)}&v=es&max=80`
+  };
+
+  const [rhyA,rhyB,pat3,pat2,synA,synB] = await Promise.all([
+    fetchES(urls.rhy), fetchES(urls.rhy2), fetchES(urls.pat3), fetchES(urls.pat2), fetchES(urls.syn), fetchES(urls.syn2)
+  ]);
+
+  const filtraES = arr=>arr.filter(o=>esEspanol(o.word, modo) && norm(o.word)!==n);
+
+  const rimasPerfectas = filtraES([...rhyA,...rhyB]);
+  const rimasPatronRaw = filtraES([...pat3,...pat2]);
+  const perfectSet=new Set(rimasPerfectas.map(o=>norm(o.word)));
+  const rimasPatron = rimasPatronRaw.filter(o=>!perfectSet.has(norm(o.word)));
+
+  // SINONIMOS REALES: solo rel_syn + curados, NADA de ml/trg
+  const sinAPI = filtraES([...synA,...synB]);
+  const sinCurados = (SINONIMOS_CURADOS[n]||SINONIMOS_CURADOS[raw.toLowerCase()]||[]).map(w=>({word:w,score:1000}));
+  const sinMap=new Map();
+  [...sinCurados,...sinAPI].forEach(o=>{ const k=norm(o.word); if(!sinMap.has(k)) sinMap.set(k,o); });
+  const sinonimos=[...sinMap.values()];
+
+  // RIMAN + MISMO SIGNIFICADO = intersección real
+  const sinSet=new Set(sinonimos.map(o=>norm(o.word)));
+  const rimanIgual=[...rimasPerfectas,...rimasPatron].filter(o=>sinSet.has(norm(o.word)));
+
+  function show(cardId,listId,badgeId,arr){
+    if(!arr.length) return;
+    $(cardId).style.display='block';
+    $(badgeId).textContent=arr.length;
+    const ul=$(listId); ul.innerHTML='';
+    arr.slice(0,80).forEach(o=>{
+      const li=document.createElement('li');
+      li.innerHTML=`<span>${o.word}</span><span class="sc">${o.score||''}</span>`;
+      li.onclick=()=>{ $('q').value=o.word; buscar(); };
+      ul.appendChild(li);
+    });
+  }
+
+  // ORDEN CORREGIDO: 1 rimas perfectas, 2 patron, 3 riman+sinonimo, 4 sinonimos
+  show('c1','l1','n1',rimasPerfectas);
+  show('c2','l2','n2',rimasPatron);
+  show('c3','l3','n3',rimanIgual);
+  show('c4','l4','n4',sinonimos);
+
+  if(modo==='cl'){
+    const chileRimas = Object.keys(CHILENISMOS).filter(k=> norm(k).endsWith(suf2) && norm(k)!==n).map(w=>({word:w,score:900}));
+    if(chileRimas.length) show('cCL','lCL','nCL',chileRimas);
+  }
+
+  $('time').textContent=`${(performance.now()-t0).toFixed(0)}ms`;
+  $('status').textContent=`${rimasPerfectas.length+rimasPatron.length} rimas primero, luego ${sinonimos.length} sinónimos reales`;
+  $('btn').textContent='Buscar'; $('btn').disabled=false;
+  $('msg').textContent = sinonimos.length===0
+    ? `Sin sinónimos reales para "${raw}" en RAE. Solo rimas.`
+    : `Orden: 1º rimas consonantes, 2º terminación *${suf3}, 3º que riman y son sinónimas, 4º sinónimos curados (no asociados).`;
+}
+
+$('q').addEventListener('keydown',e=>{ if(e.key==='Enter') buscar(); });
+window.onload=()=>{ $('q').value='casa'; buscar(); };
+</script>
+</body>
+</html>
