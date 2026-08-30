@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Formulario de Métrica — Rock and Roll Clásico</title>
+<style>
+  :root{
+    --rojo:#c81d25;
+    --negro:#1a1a1a;
+    --crema:#f5efe2;
+    --papel:#fffdf7;
+    --linea:#ddd0b3;
+    --ok:#2f7d4f;
+    --falta:#c07a1f;
+    --sobra:#c0392b;
+    --rima-a:#c8a415;
+    --rima-b:#2f6fa8;
+    --rima-c:#7a4fa0;
+    --texto:#221f1c;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    background:var(--crema);
+    font-family:Georgia, 'Iowan Old Style', serif;
+    color:var(--texto);
+    padding-bottom:60px;
+  }
+  header{
+    background:var(--negro);
+    color:var(--papel);
+    padding:22px 18px 18px;
+    text-align:center;
+    border-bottom:4px solid var(--rojo);
+  }
+  header h1{
+    margin:0 0 4px;
+    font-size:1.4rem;
+    letter-spacing:0.5px;
+  }
+  header p{
+    margin:0;
+    font-size:0.85rem;
+    opacity:0.9;
+    font-family:-apple-system,sans-serif;
+  }
+  .riff{
+    text-align:center;
+    font-size:0.75rem;
+    letter-spacing:3px;
+    color:var(--rima-a);
+    margin-top:8px;
+  }
+  main{
+    max-width:640px;
+    margin:0 auto;
+    padding:16px;
+  }
+  .estrofa{
+    background:var(--papel);
+    border:1px solid var(--linea);
+    border-radius:10px;
+    margin-bottom:22px;
+    overflow:hidden;
+    box-shadow:0 2px 6px rgba(26,26,26,0.10);
+  }
+  .estrofa-titulo{
+    background:var(--rojo);
+    color:var(--papel);
+    padding:10px 14px;
+    font-family:-apple-system,sans-serif;
+  }
+  .estrofa-titulo h2{
+    margin:0;
+    font-size:1rem;
+  }
+  .estrofa-titulo span{
+    display:block;
+    font-size:0.72rem;
+    opacity:0.95;
+    margin-top:2px;
+  }
+  .linea-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:10px 12px;
+    border-bottom:1px solid var(--linea);
+  }
+  .linea-row:last-child{border-bottom:none}
+  .rima-marca{
+    width:26px;
+    height:26px;
+    border-radius:50%;
+    flex:0 0 auto;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:0.75rem;
+    font-weight:bold;
+    font-family:-apple-system,sans-serif;
+    color:#fff;
+  }
+  .rima-libre{
+    background:transparent;
+    color:var(--linea);
+    border:1.5px dashed var(--linea);
+  }
+  .campo{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    gap:3px;
+  }
+  input[type=text]{
+    font-family:Georgia, serif;
+    font-size:1rem;
+    padding:8px 10px;
+    border:1.5px solid var(--linea);
+    border-radius:6px;
+    background:#fffefb;
+    color:var(--texto);
+  }
+  input[type=text]:focus{
+    outline:none;
+    border-color:var(--rojo);
+  }
+  .meta{
+    display:flex;
+    justify-content:space-between;
+    font-family:-apple-system,sans-serif;
+    font-size:0.72rem;
+    padding:0 2px;
+  }
+  .conteo{font-weight:bold}
+  .conteo.ok{color:var(--ok)}
+  .conteo.falta{color:var(--falta)}
+  .conteo.sobra{color:var(--sobra)}
+  .objetivo{color:#8f8172}
+
+  .nota-seccion{
+    padding:8px 14px 12px;
+    font-family:-apple-system,sans-serif;
+    font-size:0.75rem;
+    color:#8a7a63;
+    font-style:italic;
+    background:var(--papel);
+  }
+
+  .pausa-instrumental{
+    text-align:center;
+    padding:8px;
+    font-family:-apple-system,sans-serif;
+    font-size:0.72rem;
+    color:#9c8a6a;
+    font-style:italic;
+    background:repeating-linear-gradient(
+      90deg, transparent, transparent 6px, var(--linea) 6px, var(--linea) 8px
+    );
+  }
+
+  .leyenda{
+    max-width:640px;
+    margin:0 auto 20px;
+    padding:0 16px;
+    font-family:-apple-system,sans-serif;
+    font-size:0.78rem;
+    color:#5c4f3d;
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+  }
+  .leyenda span{display:flex;align-items:center;gap:5px}
+  .dot{width:12px;height:12px;border-radius:50%;display:inline-block}
+
+  .panel-box{
+    max-width:640px;
+    margin:0 auto;
+    padding:16px;
+  }
+  .panel-toggle{
+    width:100%;
+    padding:12px;
+    background:var(--negro);
+    color:var(--papel);
+    border:none;
+    border-radius:8px;
+    font-family:-apple-system,sans-serif;
+    font-size:0.95rem;
+    font-weight:600;
+    cursor:pointer;
+    margin-bottom:10px;
+  }
+  .panel-toggle:active{background:var(--rojo)}
+  .panel-area{
+    display:none;
+    margin-top:0px;
+    margin-bottom:16px;
+    background:var(--papel);
+    border:1px solid var(--linea);
+    border-radius:8px;
+    padding:16px;
+  }
+  #previewText{
+    width:100%;
+    min-height:200px;
+    font-family:'Courier New', monospace;
+    font-size:0.85rem;
+    border:1px solid var(--linea);
+    border-radius:6px;
+    padding:10px;
+    background:#fffefb;
+    color:var(--texto);
+    resize:vertical;
+  }
+  .copiar-btn{
+    margin-top:8px;
+    padding:9px 14px;
+    background:var(--rima-b);
+    color:#fff;
+    border:none;
+    border-radius:6px;
+    font-family:-apple-system,sans-serif;
+    font-size:0.85rem;
+    cursor:pointer;
+  }
+  .nota{
+    max-width:640px;
+    margin:0 auto 20px;
+    padding:0 16px;
+    font-family:-apple-system,sans-serif;
+    font-size:0.75rem;
+    color:#8a7a63;
+    line-height:1.5;
+  }
+
+  /* ANEXO */
+  .anexo{
+    max-width:640px;
+    margin:10px auto 30px;
+    padding:0 16px;
+  }
+  .anexo-cabecera{
+    background:var(--negro);
+    color:var(--papel);
+    padding:14px 16px;
+    border-radius:10px 10px 0 0;
+    font-family:-apple-system,sans-serif;
+  }
+  .anexo-cabecera h2{margin:0 0 3px;font-size:1.05rem}
+  .anexo-cabecera span{font-size:0.75rem;opacity:0.9}
+  .anexo-cuerpo{
+    background:var(--papel);
+    border:1px solid var(--linea);
+    border-top:none;
+    border-radius:0 0 10px 10px;
+    padding:16px;
+  }
+  .controles{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    margin-bottom:14px;
+    font-family:-apple-system,sans-serif;
+  }
+  .control-item{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+  }
+  .control-item label{
+    font-size:0.72rem;
+    color:#8a7a63;
+    font-weight:600;
+  }
+  .control-item select{
+    padding:8px 6px;
+    border:1.5px solid var(--linea);
+    border-radius:6px;
+    background:#fffefb;
+    font-family:-apple-system,sans-serif;
+    font-size:0.85rem;
+    color:var(--texto);
+  }
+  .check-row{
+    grid-column:1 / -1;
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    margin-top:2px;
+  }
+  .check-row label{
+    display:flex;
+    align-items:center;
+    gap:5px;
+    font-size:0.8rem;
+    font-family:-apple-system,sans-serif;
+    background:var(--crema);
+    padding:5px 9px;
+    border-radius:14px;
+    border:1px solid var(--linea);
+  }
+  #promptFinal{
+    width:100%;
+    min-height:70px;
+    font-family:'Courier New', monospace;
+    font-size:0.85rem;
+    border:1.5px solid var(--rojo);
+    border-radius:6px;
+    padding:10px;
+    background:#fffefb;
+    color:var(--texto);
+    resize:vertical;
+  }
+  .tabla-tags{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:16px;
+    font-family:-apple-system,sans-serif;
+    font-size:0.78rem;
+  }
+  .tabla-tags th{
+    background:var(--rojo);
+    color:var(--papel);
+    text-align:left;
+    padding:7px 8px;
+  }
+  .tabla-tags td{
+    padding:7px 8px;
+    border-bottom:1px solid var(--linea);
+    vertical-align:top;
+  }
+  .tabla-tags tr:nth-child(even) td{background:#f7efdf}
+  .tag-code{
+    font-family:'Courier New', monospace;
+    font-size:0.76rem;
+    color:var(--negro);
+    font-weight:600;
+  }
+  .aviso-tags{
+    font-family:-apple-system,sans-serif;
+    font-size:0.72rem;
+    color:#9c8a6a;
+    margin-top:10px;
+    line-height:1.5;
+    font-style:italic;
+  }
+
+  /* NOTAS DEL RITMO */
+  .notas-ritmo h3{
+    font-family:-apple-system,sans-serif;
+    font-size:0.9rem;
+    color:var(--rojo);
+    margin:16px 0 6px;
+  }
+  .notas-ritmo h3:first-child{margin-top:0}
+  .notas-ritmo p{
+    font-family:-apple-system,sans-serif;
+    font-size:0.85rem;
+    line-height:1.6;
+    color:var(--texto);
+    margin:0 0 6px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Formulario de métrica — Rock and Roll Clásico</h1>
+  <p>Escribe cada verso. El conteo de sílabas se ajusta solo (con sinalefa aproximada).</p>
+  <div class="riff">♪ ♫ ♪ ♫ ♪</div>
+</header>
+
+<div class="leyenda">
+  <span><span class="dot" style="background:var(--rima-a)"></span> riman entre sí (grupo A)</span>
+  <span><span class="dot" style="background:var(--rima-b)"></span> riman entre sí (grupo B)</span>
+  <span><span class="dot" style="border:1.5px dashed var(--linea);background:transparent"></span> verso libre</span>
+</div>
+
+<main>
+
+  <!-- VERSO -->
+  <div class="estrofa">
+    <div class="estrofa-titulo">
+      <h2>1. Verso</h2>
+      <span>4 versos de 8-10 sílabas (rango flexible) · rima consonante pareada AABB</span>
+    </div>
+    <div id="verso"></div>
+  </div>
+
+  <div class="pausa-instrumental">— riff de guitarra —</div>
+
+  <!-- CORO -->
+  <div class="estrofa">
+    <div class="estrofa-titulo">
+      <h2>2. Coro (Estribillo)</h2>
+      <span>4 versos de 6-8 sílabas (rango flexible) · rima consonante pareada AABB</span>
+    </div>
+    <div id="coro"></div>
+    <div class="nota-seccion">Esta es la parte "gancho" — mientras más corta y repetible, más funciona en rock and roll.</div>
+  </div>
+
+  <div class="pausa-instrumental">— solo de guitarra o saxofón —</div>
+
+  <!-- PUENTE -->
+  <div class="estrofa">
+    <div class="estrofa-titulo">
+      <h2>3. Puente (Bridge) — opcional</h2>
+      <span>Verso libre, sin patrón fijo — da contraste antes del último coro</span>
+    </div>
+    <div id="puente"></div>
+  </div>
+
+</main>
+
+<div class="panel-box">
+  <button class="panel-toggle" onclick="togglePanel('previewArea')">Ver letra armada para pegar en Suno</button>
+  <div id="previewArea" class="panel-area">
+    <textarea id="previewText" readonly></textarea>
+    <button class="copiar-btn" onclick="copiarPreview()">Copiar texto</button>
+  </div>
+
+  <button class="panel-toggle" onclick="togglePanel('notasArea')">Ver notas del ritmo</button>
+  <div id="notasArea" class="panel-area notas-ritmo">
+    <h3>Origen</h3>
+    <p>El rock and roll nace a mediados de los años 50 en Estados Unidos, de la fusión entre rhythm and blues, country/rockabilly y gospel. Es un género fundamentalmente en inglés, así que escribirlo en español es ya una adaptación — no busques que "suene" idéntico al original, sino que capture su energía.</p>
+
+    <h3>Qué tan estricta es la métrica</h3>
+    <p>Muy poco estricta comparada con la cueca o el tango. El fraseo del rock and roll usa mucho swing (corcheas desiguales) y contracciones que "tragan" sílabas al cantarse, así que un verso puede sonar bien con 7 u 11 sílabas aunque el objetivo sea 8-10. Por eso este formulario usa rangos en vez de un número fijo.</p>
+
+    <h3>Advertencia sobre el conteo</h3>
+    <p>El contador de sílabas aquí es una aproximación en español. Si mezclas palabras o frases en inglés dentro de la letra (algo común en rock and roll, ej. "baby", "rock and roll", interjecciones), el conteo puede desviarse bastante, ya que el algoritmo está pensado para fonética española.</p>
+
+    <h3>Contexto histórico</h3>
+    <p>El rock and roll temprano solía tener secciones de saxofón tanto como de guitarra (antes de que la guitarra eléctrica se volviera protagonista casi exclusiva). El "shuffle" de 12 compases de blues es la base rítmica y armónica más común del género en su forma clásica.</p>
+
+    <h3>Por qué estas variantes en el anexo</h3>
+    <p>El rockabilly agrega influencia country: guitarra "twang", contrabajo tocado a golpes ("slap bass"). El rock and roll de raíz R&B se apoya más en piano boogie-woogie y saxofón. Por eso separé esas dos variantes en el selector, además de la opción clásica genérica.</p>
+  </div>
+</div>
+
+<p class="nota">
+  Nota: el conteo de sílabas es aproximado (sinalefa simple entre palabras). En rock and roll, si un verso se pasa o se queda corto de rango pero "suena" bien al cantarlo con swing, está bien dejarlo así — el género se apoya más en el groove que en la métrica exacta.
+</p>
+
+<div class="anexo">
+  <div class="anexo-cabecera">
+    <h2>Anexo — Prompt de estilo para Suno</h2>
+    <span>Ajusta las variaciones y copia el prompt armado</span>
+  </div>
+  <div class="anexo-cuerpo">
+
+    <div class="controles">
+      <div class="control-item">
+        <label>Idioma de la voz</label>
+        <select id="selIdioma">
+          <option value="Spanish male vocals">Español</option>
+          <option value="English male vocals">Inglés</option>
+          <option value="bilingual Spanish-English vocals">Bilingüe</option>
+        </select>
+      </div>
+
+      <div class="control-item">
+        <label>Tono de la voz</label>
+        <select id="selTono">
+          <option value="">— sin especificar —</option>
+          <option value="raspy rock and roll shout">Rasposo / gritado</option>
+          <option value="smooth crooner voice">Suave / crooner</option>
+          <option value="high-energy falsetto">Falsete enérgico</option>
+        </select>
+      </div>
+
+      <div class="control-item">
+        <label>Variante</label>
+        <select id="selVariante">
+          <option value="1950s classic rock and roll">Rock and roll clásico (genérico)</option>
+          <option value="rockabilly, twangy guitar, slap bass">Rockabilly (country/slap bass)</option>
+          <option value="R&B-rooted rock and roll, boogie piano">Raíz R&B (piano boogie-woogie)</option>
+        </select>
+      </div>
+
+      <div class="control-item">
+        <label>Ánimo</label>
+        <select id="selAnimo">
+          <option value="energetic, rebellious">Enérgico / rebelde</option>
+          <option value="fun, danceable">Alegre / bailable</option>
+          <option value="romantic, slow dance">Romántico (balada lenta)</option>
+        </select>
+      </div>
+
+      <div class="control-item">
+        <label>Tempo</label>
+        <select id="selTempo">
+          <option value="uptempo shuffle">Rápido (shuffle)</option>
+          <option value="mid-tempo">Medio</option>
+          <option value="slow, doo-wop ballad">Lento (balada doo-wop)</option>
+        </select>
+      </div>
+
+      <div class="control-item">
+        <label>Base rítmica</label>
+        <select id="selRitmo">
+          <option value="12-bar blues, swung eighth notes">12 compases de blues (shuffle)</option>
+          <option value="straight eighth notes, driving beat">Corcheas rectas (más directo)</option>
+        </select>
+      </div>
+
+      <div class="check-row" id="checkInstrumentos">
+        <label><input type="checkbox" value="electric guitar" checked> Guitarra eléctrica</label>
+        <label><input type="checkbox" value="upright bass"> Contrabajo</label>
+        <label><input type="checkbox" value="boogie piano"> Piano boogie</label>
+        <label><input type="checkbox" value="saxophone"> Saxofón</label>
+        <label><input type="checkbox" value="shuffle drums" checked> Batería shuffle</label>
+        <label><input type="checkbox" value="doo-wop backing vocals"> Coros doo-wop</label>
+      </div>
+    </div>
+
+    <textarea id="promptFinal" readonly></textarea>
+    <button class="copiar-btn" onclick="copiarPrompt()">Copiar prompt</button>
+
+    <table class="tabla-tags">
+      <thead>
+        <tr><th>Etiqueta</th><th>Efecto en el rock and roll</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="tag-code">12-bar blues</td><td>Base armónica y rítmica más típica del género clásico</td></tr>
+        <tr><td class="tag-code">rockabilly</td><td>Más influencia country, guitarra "twang", slap bass</td></tr>
+        <tr><td class="tag-code">boogie piano</td><td>Aporta el color más R&B/Nueva Orleans del género</td></tr>
+        <tr><td class="tag-code">doo-wop backing vocals</td><td>Coros armonizados típicos de baladas lentas del período</td></tr>
+        <tr><td class="tag-code">raspy rock and roll shout</td><td>Voz más cruda y energética, estilo grito rockero</td></tr>
+        <tr><td class="tag-code">shuffle drums</td><td>El "swing" característico de la batería del género</td></tr>
+        <tr><td class="tag-code">saxophone</td><td>Muy propio del rock and roll temprano, antes del dominio de la guitarra</td></tr>
+        <tr><td class="tag-code">slow, doo-wop ballad</td><td>Variante lenta, romántica, de baile de salón</td></tr>
+      </tbody>
+    </table>
+
+    <p class="aviso-tags">
+      Estas combinaciones son puntos de partida razonables, no reglas fijas — prueba y ajusta según el resultado real que te devuelva Suno.
+    </p>
+
+  </div>
+</div>
+
+<script>
+const VOCALES = "aeiouáéíóúüAEIOUÁÉÍÓÚÜ";
+
+function esVocal(c){ return VOCALES.indexOf(c) !== -1; }
+
+function limpiar(palabra){
+  return palabra.replace(/[.,;:!¡?¿"'«»()]/g,"");
+}
+
+function silabasPalabra(palabra){
+  palabra = limpiar(palabra).toLowerCase();
+  if(!palabra) return 0;
+  let normal = palabra.replace(/y/g, "i");
+  let grupos = normal.match(/[aeiouáéíóúü]+/g);
+  return grupos ? grupos.length : 0;
+}
+
+function empiezaConVocal(palabra){
+  palabra = limpiar(palabra).toLowerCase();
+  if(palabra.startsWith("h")) palabra = palabra.slice(1);
+  return palabra.length>0 && esVocal(palabra[0]);
+}
+
+function terminaConVocal(palabra){
+  palabra = limpiar(palabra).toLowerCase();
+  return palabra.length>0 && esVocal(palabra[palabra.length-1]);
+}
+
+function contarSilabas(linea){
+  let palabras = linea.trim().split(/\s+/).filter(p=>p.length>0);
+  if(palabras.length===0) return 0;
+  let total = 0;
+  let prevTerminaVocal = false;
+  for(let p of palabras){
+    let s = silabasPalabra(p);
+    total += s;
+    if(prevTerminaVocal && empiezaConVocal(p)){
+      total -= 1;
+    }
+    prevTerminaVocal = terminaConVocal(p);
+  }
+  return total;
+}
+
+// min/max:null = verso libre. grupo:null = sin rima obligatoria
+const ESTROFAS = {
+  verso: [
+    {min:8, max:10, grupo:'a'},
+    {min:8, max:10, grupo:'a'},
+    {min:8, max:10, grupo:'b'},
+    {min:8, max:10, grupo:'b'}
+  ],
+  coro: [
+    {min:6, max:8, grupo:'a'},
+    {min:6, max:8, grupo:'a'},
+    {min:6, max:8, grupo:'b'},
+    {min:6, max:8, grupo:'b'}
+  ],
+  puente: [
+    {min:null, max:null, grupo:null},
+    {min:null, max:null, grupo:null}
+  ]
+};
+
+const COLORES = { a:'var(--rima-a)', b:'var(--rima-b)', c:'var(--rima-c)' };
+
+function construirEstrofa(id, config){
+  const contenedor = document.getElementById(id);
+  config.forEach((linea, idx)=>{
+    const row = document.createElement('div');
+    row.className = 'linea-row';
+
+    const marca = document.createElement('div');
+    marca.className = 'rima-marca' + (linea.grupo ? '' : ' rima-libre');
+    if(linea.grupo){
+      marca.style.background = COLORES[linea.grupo];
+      marca.textContent = linea.grupo.toUpperCase();
+    } else {
+      marca.textContent = '—';
+    }
+    row.appendChild(marca);
+
+    const campo = document.createElement('div');
+    campo.className = 'campo';
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.id = `${id}-${idx}`;
+
+    campo.appendChild(input);
+
+    if(linea.min !== null){
+      input.placeholder = `Verso ${idx+1}`;
+      const meta = document.createElement('div');
+      meta.className = 'meta';
+      const objetivo = document.createElement('span');
+      objetivo.className = 'objetivo';
+      objetivo.textContent = `objetivo: ${linea.min}-${linea.max} sílabas`;
+      const conteo = document.createElement('span');
+      conteo.className = 'conteo';
+      conteo.id = `${id}-count-${idx}`;
+      conteo.textContent = '0';
+      meta.appendChild(objetivo);
+      meta.appendChild(conteo);
+      campo.appendChild(meta);
+
+      input.addEventListener('input', ()=>{
+        const n = contarSilabas(input.value);
+        conteo.textContent = `${n} sílabas`;
+        conteo.className = 'conteo';
+        if(n >= linea.min && n <= linea.max){ conteo.classList.add('ok'); }
+        else if(n < linea.min){ conteo.classList.add('falta'); }
+        else { conteo.classList.add('sobra'); }
+        actualizarPreview();
+      });
+    } else {
+      input.placeholder = `Verso libre ${idx+1}`;
+      input.addEventListener('input', actualizarPreview);
+    }
+
+    row.appendChild(campo);
+    contenedor.appendChild(row);
+  });
+}
+
+construirEstrofa('verso', ESTROFAS.verso);
+construirEstrofa('coro', ESTROFAS.coro);
+construirEstrofa('puente', ESTROFAS.puente);
+
+function valorLinea(id, idx){
+  const el = document.getElementById(`${id}-${idx}`);
+  return el ? el.value.trim() : '';
+}
+
+function actualizarPreview(){
+  let texto = '[Verse]\n';
+  ESTROFAS.verso.forEach((_,i)=>{
+    const v = valorLinea('verso', i);
+    if(v) texto += v + '\n';
+  });
+  texto += '\n[Chorus]\n';
+  ESTROFAS.coro.forEach((_,i)=>{
+    const v = valorLinea('coro', i);
+    if(v) texto += v + '\n';
+  });
+  const puenteLineas = ESTROFAS.puente.map((_,i)=>valorLinea('puente', i)).filter(Boolean);
+  if(puenteLineas.length){
+    texto += '\n[Bridge]\n' + puenteLineas.join('\n') + '\n';
+  }
+  document.getElementById('previewText').value = texto;
+}
+
+function togglePanel(id){
+  const area = document.getElementById(id);
+  const abierto = area.style.display === 'block';
+  area.style.display = abierto ? 'none' : 'block';
+  if(id === 'previewArea' && !abierto) actualizarPreview();
+}
+
+function copiarPreview(){
+  const ta = document.getElementById('previewText');
+  ta.select();
+  ta.setSelectionRange(0, 999999);
+  try{ document.execCommand('copy'); }catch(e){}
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(ta.value).catch(()=>{});
+  }
+}
+
+function armarPrompt(){
+  const variante = document.getElementById('selVariante').value;
+  const ritmo = document.getElementById('selRitmo').value;
+  const animo = document.getElementById('selAnimo').value;
+  const tempo = document.getElementById('selTempo').value;
+  const idioma = document.getElementById('selIdioma').value;
+  const tono = document.getElementById('selTono').value;
+
+  const instrumentos = Array.from(
+    document.querySelectorAll('#checkInstrumentos input[type=checkbox]:checked')
+  ).map(el => el.value);
+
+  const partes = [variante, ...instrumentos, ritmo, tempo, animo, idioma];
+  if(tono) partes.push(tono);
+
+  document.getElementById('promptFinal').value = partes.filter(Boolean).join(', ');
+}
+
+function copiarPrompt(){
+  const ta = document.getElementById('promptFinal');
+  ta.select();
+  ta.setSelectionRange(0, 999999);
+  try{ document.execCommand('copy'); }catch(e){}
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(ta.value).catch(()=>{});
+  }
+}
+
+['selIdioma','selTono','selVariante','selAnimo','selTempo','selRitmo'].forEach(id=>{
+  document.getElementById(id).addEventListener('change', armarPrompt);
+});
+document.querySelectorAll('#checkInstrumentos input[type=checkbox]').forEach(el=>{
+  el.addEventListener('change', armarPrompt);
+});
+armarPrompt();
+</script>
+
+</body>
+</html>
