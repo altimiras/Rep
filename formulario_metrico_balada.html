@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Formulario de Métrica — Balada Melódica</title>
+<style>
+  :root{
+    --purpura:#4a1942;
+    --purpura-osc:#22091f;
+    --crema:#f7f0e6;
+    --papel:#fffbf5;
+    --linea:#ddd0c3;
+    --ok:#2f7d4f;
+    --falta:#c07a1f;
+    --sobra:#c0392b;
+    --rima-a:#c9a227;
+    --rima-b:#8a3b5a;
+    --rima-c:#3f6b7c;
+    --texto:#2a1f28;
+
+    --din-piano:#7fa8c9;
+    --din-mf:#d9a83c;
+    --din-forte:#d9723a;
+    --din-ff:#c0392b;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    background:var(--crema);
+    font-family:Georgia, 'Iowan Old Style', serif;
+    color:var(--texto);
+    padding-bottom:60px;
+  }
+  header{
+    background:var(--purpura-osc);
+    color:var(--papel);
+    padding:22px 18px 18px;
+    text-align:center;
+  }
+  header h1{
+    margin:0 0 4px;
+    font-size:1.4rem;
+    letter-spacing:0.5px;
+  }
+  header p{
+    margin:0;
+    font-size:0.85rem;
+    opacity:0.9;
+    font-family:-apple-system,sans-serif;
+  }
+  .spotlight{
+    text-align:center;
+    font-size:0.75rem;
+    letter-spacing:3px;
+    color:var(--rima-a);
+    margin-top:8px;
+  }
+  main{
+    max-width:640px;
+    margin:0 auto;
+    padding:16px;
+  }
+  .estrofa{
+    background:var(--papel);
+    border:1px solid var(--linea);
+    border-radius:10px;
+    margin-bottom:22px;
+    overflow:hidden;
+    box-shadow:0 2px 6px rgba(34,9,31,0.10);
+  }
+  .estrofa-titulo{
+    background:var(--purpura);
+    color:var(--papel);
+    padding:10px 14px;
+    font-family:-apple-system,sans-serif;
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:10px;
+  }
+  .estrofa-titulo-texto h2{
+    margin:0;
+    font-size:1rem;
+  }
+  .estrofa-titulo-texto span{
+    display:block;
+    font-size:0.72rem;
+    opacity:0.95;
+    margin-top:2px;
+  }
+  .dinamica-badge{
+    flex:0 0 auto;
+    font-size:0.68rem;
+    font-weight:700;
+    letter-spacing:0.5px;
+    padding:4px 9px;
+    border-radius:12px;
+    color:#2a1f28;
+    white-space:nowrap;
+  }
+  .din-piano{background:var(--din-piano)}
+  .din-mf{background:var(--din-mf)}
+  .din-forte{background:var(--din-forte);color:#fff}
+  .din-ff{background:var(--din-ff);color:#fff}
+
+  .linea-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:10px 12px;
+    border-bottom:1px solid var(--linea);
+  }
+  .linea-row:last-child{border-bottom:none}
+  .rima-marca{
+    width:26px;
+    height:26px;
+    border-radius:50%;
+    flex:0 0 auto;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:0.75rem;
+    font-weight:bold;
+    font-family:-apple-system,sans-serif;
+    color:#fff;
+  }
+  .rima-libre{
+    background:transparent;
+    color:var(--linea);
+    border:1.5px dashed var(--linea);
+  }
+  .campo{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    gap:3px;
+  }
+  input[type=text]{
+    font-family:Georgia, serif;
+    font-size:1rem;
+    padding:8px 10px;
+    border:1.5px solid var(--linea);
+    border-radius:6px;
+    background:#fffefb;
+    color:var(--texto);
+  }
+  input[type=text]:focus{
+    outline:none;
+    border-color:var(--purpura);
+  }
+  .meta{
+    display:flex;
+    justify-content:space-between;
+    font-family:-apple-system,sans-serif;
+    font-size:0.72rem;
+    padding:0 2px;
+  }
+  .conteo{font-weight:bold}
+  .conteo.ok{color:var(--ok)}
+  .conteo.falta{color:var(--falta)}
+  .conteo.sobra{color:var(--sobra)}
+  .objetivo{color:#8f7d87}
+
+  .nota-seccion{
+    padding:8px 14px 12px;
+    font-family:-apple-system,sans-serif;
+    font-size:0.75rem;
+    color:#8a7683;
+    font-style:italic;
+    background:var(--papel);
+  }
+
+  .pausa-instrumental{
+    text-align:center;
+    padding:8px;
+    font-family:-apple-system,sans-serif;
+    font-size:0.72rem;
+    color:#9c8792;
+    font-style:italic;
+    background:repeating-linear-gradient(
+      90deg, transparent, transparent 6px, var(--linea) 6px, var(--linea) 8px
+    );
+  }
+
+  .leyenda{
+    max-width:640px;
+    margin:0 auto 8px;
+    padding:0 16px;
+    font-family:-apple-system,sans-serif;
+    font-size:0.78rem;
+    color:#5c4a55;
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+  }
+  .leyenda span{display:flex;align-items:center;gap:5px}
+  .dot{width:12px;height:12px;border-radius:50%;display:inline-block}
+  .leyenda-dinamica{
+    max-width:640px;
+    margin:0 auto 20px;
+    padding:0 16px;
+    font-family:-apple-system,sans-serif;
+    font-size:0.72rem;
+    color:#8a7683;
+    display:flex;
+    align-items:center;
+    gap:6px;
+    flex-wrap:wrap;
+  }
+  .barra-crescendo{
+    flex:1;
+    min-width:120px;
+    height:8px;
+    border-radius:4px;
+    background:linear-gradient(90deg, var(--din-piano), var(--din-mf), var(--din-forte), var(--din-ff));
+  }
+
+  .panel-box{
+    max-width:640px;
+    margin:0 auto;
+    padding:16px;
+  }
+  .panel-toggle{
+    width:100%;
+    padding:12px;
+    background:var(--purpura-osc);
+    color:var(--papel);
+    border:none;
+    border-radius:8px;
+    font-family:-apple-system,sans-serif;
+    font-size:0.95rem;
+    font-weight:600;
+    cursor:pointer;
+    margin-bottom:10px;
+  }
+  .panel-toggle:active{background:var(--purpura)}
+  .panel-area{
+    display:none;
+    margin-bottom:16px;
+    background:var(--papel);
+    border:1px solid var(--linea);
+    border-radius:8px;
+    padding:16px;
+  }
+  #previewText{
+    width:100%;
+    min-height:200px;
+    font-family:'Courier New', monospace;
+    font-size:0.85rem;
+    border:1px solid var(--linea);
+    border-radius:6px;
+    padding:10px;
+    background:#fffefb;
+    color:var(--texto);
+    resize:vertical;
+  }
+  .copiar-btn{
+    margin-top:8px;
+    padding:9px 14px;
+    background:var(--rima-c);
+    color:#fff;
+    border:none;
+    border-radius:6px;
+    font-family:-apple-system,sans-serif;
+    font-size:0.85rem;
+    cursor:pointer;
+  }
+  .nota{
+    max-width:640px;
+    margin:0 auto 20px;
+    padding:0 16px;
+    font-family:-apple-system,sans-serif;
+    font-size:0.75rem;
+    color:#8a7683;
+    line-height:1.5;
+  }
+
+  /* ANEXO */
+  .anexo{
+    max-width:640px;
+    margin:10px auto 30px;
+    padding:0 16px;
+  }
+  .anexo-cabecera{
+    background:var(--purpura-osc);
+    color:var(--papel);
+    padding:14px 16px;
+    border-radius:10px 10px 0 0;
+    font-family:-apple-system,sans-serif;
+  }
+  .anexo-cabecera h2{margin:0 0 3px;font-size:1.05rem}
+  .anexo-cabecera span{font-size:0.75rem;opacity:0.9}
+  .anexo-cuerpo{
+    background:var(--papel);
+    border:1px solid var(--linea);
+    border-top:none;
+    border-radius:0 0 10px 10px;
+    padding:16px;
+  }
+  .controles{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    margin-bottom:14px;
+    font-family:-apple-system,sans-serif;
+  }
+  .control-item{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+  }
+  .control-item label{
+    font-size:0.72rem;
+    color:#8a7683;
+    font-weight:600;
+  }
+  .control-item select{
+    padding:8px 6px;
+    border:1.5px solid var(--linea);
+    border-radius:6px;
+    background:#fffefb;
+    font-family:-apple-system,sans-serif;
+    font-size:0.85rem;
+    color:var(--texto);
+  }
+  .check-row{
+    grid-column:1 / -1;
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    margin-top:2px;
+  }
+  .check-row label{
+    display:flex;
+    align-items:center;
+    gap:5px;
+    font-size:0.8rem;
+    font-family:-apple-system,sans-serif;
+    background:var(--crema);
+    padding:5px 9px;
+    border-radius:14px;
+    border:1px solid var(--linea);
+  }
+  #promptFinal{
+    width:100%;
+    min-height:70px;
+    font-family:'Courier New', monospace;
+    font-size:0.85rem;
+    border:1.5px solid var(--purpura);
+    border-radius:6px;
+    padding:10px;
+    background:#fffefb;
+    color:var(--texto);
+    resize:vertical;
+  }
+  .tabla-tags{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:16px;
+    font-family:-apple-system,sans-serif;
+    font-size:0.78rem;
+  }
+  .tabla-tags th{
+    background:var(--purpura);
+    color:var(--papel);
+    text-align:left;
+    padding:7px 8px;
+  }
+  .tabla-tags td{
+    padding:7px 8px;
+    border-bottom:1px solid var(--linea);
+    vertical-align:top;
+  }
+  .tabla-tags tr:nth-child(even) td{background:#f5ece2}
+  .tag-code{
+    font-family:'Courier New', monospace;
+    font-size:0.76rem;
+    color:var(--purpura-osc);
+    font-weight:600;
+  }
+  .aviso-tags{
+    font-family:-apple-system,sans-serif;
+    font-size:0.72rem;
+    color:#9c8792;
+    margin-top:10px;
+    line-height:1.5;
+    font-style:italic;
+  }
+
+  .notas-ritmo h3{
+    font-family:-apple-system,sans-serif;
+    font-size:0.9rem;
+    color:var(--purpura);
+    margin:16px 0 6px;
+  }
+  .notas-ritmo h3:first-child{margin-top:0}
+  .notas-ritmo p{
+    font-family:-apple-system,sans-serif;
+    font-size:0.85rem;
+    line-height:1.6;
+    color:var(--texto);
+    margin:0 0 6px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Formulario de métrica — Balada Melódica</h1>
+  <p>Aquí la métrica silábica es solo referencial. Lo que estructura la balada es la dinámica emocional (el crescendo).</p>
+  <div class="spotlight">✦ ·· ✦ ·· ✦</div>
+</header>
+
+<div class="leyenda">
+  <span><span class="dot" style="background:var(--rima-a)"></span> riman entre sí (grupo A)</span>
+  <span><span class="dot" style="background:var(--rima-b)"></span> riman entre sí (grupo B)</span>
+  <span><span class="dot" style="border:1.5px dashed var(--linea);background:transparent"></span> verso libre</span>
+</div>
+<div class="leyenda-dinamica">
+  <span>El arco dramático típico:</span>
+  <div class="barra-crescendo"></div>
+  <span>piano → mezzoforte → fortissimo</span>
+</div>
+
+<main>
+
+  <!-- VERSO 1 -->
+  <div class="estrofa">
+    <div class="estrofa-titulo">
+      <div class="estrofa-titulo-texto">
+        <h2>1. Verso 1</h2>
+        <span>4 versos de 9-12 sílabas (rango flexible) · rima consonante en pares</span>
+      </div>
+      <div class="dinamica-badge din-piano">PIANO — suave</div>
+    </div>
+    <div id="verso1"></div>
+    <div class="nota-seccion">Registro vocal bajo, casi hablado. Planta la historia sin adelantar la emoción.</div>
+  </div>
+
+  <div class="pausa-instrumental">— entra el piano/cuerdas, muy suave —</div>
+
+  <!-- VERSO 2 -->
+  <div class="estrofa">
+    <div class="estrofa-titulo">
+      <div class="estrofa-titulo-texto">
+        <h2>2. Verso 2</h2>
+        <span>4 versos de 9-12 sílabas (rango flexible) · rima consonante en pares</span>
+      </div>
+      <div class="dinamica-badge din-mf">MEZZOFORTE — creciendo</div>
+    </div>
+    <div id="verso2"></div>
+    <div class="nota-seccion">La voz sube de registro, las cuerdas empiezan a engrosar el arreglo. Se prepara el estallido.</div>
+  </div>
+
+  <div class="pausa-instrumental">— crescendo orquestal, entrada de cuerdas y percusión —</div>
+
+  <!-- ESTRIBILLO -->
+  <div class="estrofa">
+    <div class="estrofa-titulo">
+      <div class="estrofa-titulo-texto">
+        <h2>3. Estribillo</h2>
+        <span>4 versos de 6-9 sílabas (más cortos y contundentes) · rima consonante pareada AABB</span>
+      </div>
+      <div class="dinamica-badge din-ff">FORTISSIMO — clímax</div>
+    </div>
+    <div id="estribillo"></div>
+    <div class="nota-seccion">El momento "gritado" de la canción — la frase que Raphael o Adamo lanzarían a todo pulmón.</div>
+  </div>
+
+  <div class="pausa-instrumental">— corte dramático / silencio breve —</div>
+
+  <!-- PUENTE -->
+  <div class="estrofa">
+    <div class="estrofa-titulo">
+      <div class="estrofa-titulo-texto">
+        <h2>4. Puente (quiebre) — opcional</h2>
+        <span>Verso libre, sin patrón fijo</span>
+      </div>
+      <div class="dinamica-badge din-forte">CAÍDA SÚBITA → nuevo ascenso</div>
+    </div>
+    <div id="puente"></div>
+    <div class="nota-seccion">La dinámica cae de golpe (casi susurrado) para poder volver a subir hacia el estribillo final, más intenso que el primero.</div>
+  </div>
+
+</main>
+
+<div class="panel-box">
+  <button class="panel-toggle" onclick="togglePanel('previewArea')">Ver letra armada para pegar en Suno</button>
+  <div id="previewArea" class="panel-area">
+    <textarea id="previewText" readonly></textarea>
+    <button class="copiar-btn" onclick="copiarPreview()">Copiar texto</button>
+  </div>
+
+  <button class="panel-toggle" onclick="togglePanel('notasArea')">Ver notas del ritmo</button>
+  <div id="notasArea" class="panel-area notas-ritmo">
+    <h3>Origen</h3>
+    <p>La balada melódica (o "canción melódica española") floreció en los años 60, con Raphael como uno de sus máximos exponentes en español, y equivalentes en otras lenguas como Salvatore Adamo en francés. No es un ritmo de baile: es una forma de canción pensada para la interpretación dramática y el lucimiento vocal.</p>
+
+    <h3>Qué tan estricta es la métrica</h3>
+    <p>Muy poco, comparada con todos los ritmos anteriores. Lo que realmente "compone" la balada es el arco dinámico: empieza suave y crece hasta un clímax. El conteo de sílabas aquí es solo una guía de referencia, no una regla — prioriza que la frase suene natural al hablarla con emoción antes que el número exacto.</p>
+
+    <h3>Advertencia sobre el conteo</h3>
+    <p>El contador de sílabas es aproximado (sinalefa simple). En balada esto importa menos que en cueca o tango, porque el cantante puede estirar o comprimir frases libremente (rubato) siguiendo la emoción del texto, no un compás fijo.</p>
+
+    <h3>Contexto histórico</h3>
+    <p>Este estilo se apoyaba en arreglos orquestales grandes (cuerdas, a veces coro de fondo) y en cantantes con formación teatral, capaces de pasar de un registro casi hablado a un fortissimo dramático en pocos compases. El tempo casi siempre es libre o "rubato" — el director de orquesta seguía al cantante, no al revés.</p>
+
+    <h3>Por qué esta estructura en el formulario</h3>
+    <p>En vez de estrofas con nombres tradicionales de la poesía folclórica, aquí marqué el arco dramático explícitamente (piano → mezzoforte → fortissimo → quiebre) porque es la verdadera "forma" de la balada — más parecida a la dirección de una escena teatral que a un poema con métrica fija.</p>
+  </div>
+</div>
+
+<p class="nota">
+  Nota: en este género, si una línea te queda "larga" o "corta" respecto al rango sugerido pero suena poderosa al leerla en voz alta con la emoción del momento, priorízala así — el rango es solo orientativo.
+</p>
+
+<div class="anexo">
+  <div class="anexo-cabecera">
+    <h2>Anexo — Prompt de estilo para Suno</h2>
+    <span>Ajusta las variaciones y copia el prompt armado</span>
+  </div>
+  <div class="anexo-cuerpo">
+
+    <div class="controles">
+      <div class="control-item">
+        <label>Voz</label>
+        <select id="selVoz">
+          <option value="Spanish male vocals, dramatic crooner">Masculina (baladista dramático)</option>
+          <option value="Spanish female vocals, dramatic soprano">Femenina (soprano dramática)</option>
+          <option value="Spanish male vocals with backing choir">Masculina con coro de fondo</option>
+        </select>
+      </div>
+
+      <div class="control-item">
+        <label>Tono de la voz</label>
+        <select id="selTono">
+          <option value="">— sin especificar —</option>
+          <option value="deep baritone, theatrical delivery">Grave / barítono teatral</option>
+          <option value="lyrical tenor voice">Tenor lírico</option>
+          <option value="powerful belting climax">Voz potente en el clímax (belting)</option>
+        </select>
+      </div>
+
+      <div class="control-item">
+        <label>Variante</label>
+        <select id="selVariante">
+          <option value="Spanish melodic ballad, 1960s orchestral">Balada melódica española (años 60)</option>
+          <option value="European romantic chanson ballad">Chanson-balada europea (estilo Adamo)</option>
+          <option value="bolero-influenced ballad">Balada con influencia de bolero</option>
+        </select>
+      </div>
+
+      <div class="control-item">
+        <label>Ánimo</label>
+        <select id="selAnimo">
+          <option value="dramatic, passionate">Dramático / apasionado</option>
+          <option value="heartbroken, anguished">Doloroso / desgarrado</option>
+          <option value="triumphant, hopeful climax">Triunfal / esperanzador</option>
+        </select>
+      </div>
+
+      <div class="control-item">
+        <label>Tempo</label>
+        <select id="selTempo">
+          <option value="free tempo, rubato">Libre (rubato)</option>
+          <option value="slow building tempo">Lento, creciente</option>
+        </select>
+      </div>
+
+      <div class="control-item">
+        <label>Dinámica</label>
+        <select id="selDinamica">
+          <option value="soft to powerful dynamic build, orchestral swell">Crescendo dramático completo</option>
+          <option value="dramatic vocal climax">Énfasis en el clímax final</option>
+        </select>
+      </div>
+
+      <div class="check-row" id="checkInstrumentos">
+        <label><input type="checkbox" value="string orchestra" checked> Orquesta de cuerdas</label>
+        <label><input type="checkbox" value="piano" checked> Piano</label>
+        <label><input type="checkbox" value="symphonic arrangement"> Arreglo sinfónico</label>
+        <label><input type="checkbox" value="backing choir"> Coro de fondo</label>
+        <label><input type="checkbox" value="soft drums"> Batería suave</label>
+      </div>
+    </div>
+
+    <textarea id="promptFinal" readonly></textarea>
+    <button class="copiar-btn" onclick="copiarPrompt()">Copiar prompt</button>
+
+    <table class="tabla-tags">
+      <thead>
+        <tr><th>Etiqueta</th><th>Efecto en la balada melódica</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="tag-code">orchestral swell</td><td>El crecimiento gradual de las cuerdas hacia el clímax</td></tr>
+        <tr><td class="tag-code">rubato</td><td>Tempo libre, el cantante "estira" el tiempo según la emoción</td></tr>
+        <tr><td class="tag-code">dramatic vocal climax</td><td>Refuerza el momento de mayor intensidad vocal</td></tr>
+        <tr><td class="tag-code">powerful belting</td><td>Voz proyectada al máximo en el estribillo</td></tr>
+        <tr><td class="tag-code">backing choir</td><td>Coro que engrosa el sonido en el clímax, muy típico del género</td></tr>
+        <tr><td class="tag-code">theatrical delivery</td><td>Interpretación casi actuada, con pausas y énfasis dramáticos</td></tr>
+        <tr><td class="tag-code">bolero-influenced</td><td>Aporta un aire más romántico y cadencioso, menos "orquesta pop"</td></tr>
+      </tbody>
+    </table>
+
+    <p class="aviso-tags">
+      Estas combinaciones son puntos de partida razonables, no reglas fijas — prueba y ajusta según el resultado real que te devuelva Suno.
+    </p>
+
+  </div>
+</div>
+
+<script>
+const VOCALES = "aeiouáéíóúüAEIOUÁÉÍÓÚÜ";
+
+function esVocal(c){ return VOCALES.indexOf(c) !== -1; }
+
+function limpiar(palabra){
+  return palabra.replace(/[.,;:!¡?¿"'«»()]/g,"");
+}
+
+function silabasPalabra(palabra){
+  palabra = limpiar(palabra).toLowerCase();
+  if(!palabra) return 0;
+  let normal = palabra.replace(/y/g, "i");
+  let grupos = normal.match(/[aeiouáéíóúü]+/g);
+  return grupos ? grupos.length : 0;
+}
+
+function empiezaConVocal(palabra){
+  palabra = limpiar(palabra).toLowerCase();
+  if(palabra.startsWith("h")) palabra = palabra.slice(1);
+  return palabra.length>0 && esVocal(palabra[0]);
+}
+
+function terminaConVocal(palabra){
+  palabra = limpiar(palabra).toLowerCase();
+  return palabra.length>0 && esVocal(palabra[palabra.length-1]);
+}
+
+function contarSilabas(linea){
+  let palabras = linea.trim().split(/\s+/).filter(p=>p.length>0);
+  if(palabras.length===0) return 0;
+  let total = 0;
+  let prevTerminaVocal = false;
+  for(let p of palabras){
+    let s = silabasPalabra(p);
+    total += s;
+    if(prevTerminaVocal && empiezaConVocal(p)){
+      total -= 1;
+    }
+    prevTerminaVocal = terminaConVocal(p);
+  }
+  return total;
+}
+
+const ESTROFAS = {
+  verso1: [
+    {min:9, max:12, grupo:null},
+    {min:9, max:12, grupo:'a'},
+    {min:9, max:12, grupo:null},
+    {min:9, max:12, grupo:'a'}
+  ],
+  verso2: [
+    {min:9, max:12, grupo:null},
+    {min:9, max:12, grupo:'b'},
+    {min:9, max:12, grupo:null},
+    {min:9, max:12, grupo:'b'}
+  ],
+  estribillo: [
+    {min:6, max:9, grupo:'a'},
+    {min:6, max:9, grupo:'a'},
+    {min:6, max:9, grupo:'b'},
+    {min:6, max:9, grupo:'b'}
+  ],
+  puente: [
+    {min:null, max:null, grupo:null},
+    {min:null, max:null, grupo:null}
+  ]
+};
+
+const COLORES = { a:'var(--rima-a)', b:'var(--rima-b)', c:'var(--rima-c)' };
+
+function construirEstrofa(id, config){
+  const contenedor = document.getElementById(id);
+  config.forEach((linea, idx)=>{
+    const row = document.createElement('div');
+    row.className = 'linea-row';
+
+    const marca = document.createElement('div');
+    marca.className = 'rima-marca' + (linea.grupo ? '' : ' rima-libre');
+    if(linea.grupo){
+      marca.style.background = COLORES[linea.grupo];
+      marca.textContent = linea.grupo.toUpperCase();
+    } else {
+      marca.textContent = '—';
+    }
+    row.appendChild(marca);
+
+    const campo = document.createElement('div');
+    campo.className = 'campo';
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.id = `${id}-${idx}`;
+
+    campo.appendChild(input);
+
+    if(linea.min !== null){
+      input.placeholder = `Verso ${idx+1}`;
+      const meta = document.createElement('div');
+      meta.className = 'meta';
+      const objetivo = document.createElement('span');
+      objetivo.className = 'objetivo';
+      objetivo.textContent = `referencia: ${linea.min}-${linea.max} sílabas`;
+      const conteo = document.createElement('span');
+      conteo.className = 'conteo';
+      conteo.id = `${id}-count-${idx}`;
+      conteo.textContent = '0';
+      meta.appendChild(objetivo);
+      meta.appendChild(conteo);
+      campo.appendChild(meta);
+
+      input.addEventListener('input', ()=>{
+        const n = contarSilabas(input.value);
+        conteo.textContent = `${n} sílabas`;
+        conteo.className = 'conteo';
+        if(n >= linea.min && n <= linea.max){ conteo.classList.add('ok'); }
+        else if(n < linea.min){ conteo.classList.add('falta'); }
+        else { conteo.classList.add('sobra'); }
+        actualizarPreview();
+      });
+    } else {
+      input.placeholder = `Verso libre ${idx+1}`;
+      input.addEventListener('input', actualizarPreview);
+    }
+
+    row.appendChild(campo);
+    contenedor.appendChild(row);
+  });
+}
+
+construirEstrofa('verso1', ESTROFAS.verso1);
+construirEstrofa('verso2', ESTROFAS.verso2);
+construirEstrofa('estribillo', ESTROFAS.estribillo);
+construirEstrofa('puente', ESTROFAS.puente);
+
+function valorLinea(id, idx){
+  const el = document.getElementById(`${id}-${idx}`);
+  return el ? el.value.trim() : '';
+}
+
+function actualizarPreview(){
+  let texto = '[Verse]\n';
+  ESTROFAS.verso1.forEach((_,i)=>{
+    const v = valorLinea('verso1', i);
+    if(v) texto += v + '\n';
+  });
+  texto += '\n[Verse]\n';
+  ESTROFAS.verso2.forEach((_,i)=>{
+    const v = valorLinea('verso2', i);
+    if(v) texto += v + '\n';
+  });
+  texto += '\n[Chorus]\n';
+  ESTROFAS.estribillo.forEach((_,i)=>{
+    const v = valorLinea('estribillo', i);
+    if(v) texto += v + '\n';
+  });
+  const puenteLineas = ESTROFAS.puente.map((_,i)=>valorLinea('puente', i)).filter(Boolean);
+  if(puenteLineas.length){
+    texto += '\n[Bridge]\n' + puenteLineas.join('\n') + '\n';
+  }
+  document.getElementById('previewText').value = texto;
+}
+
+function togglePanel(id){
+  const area = document.getElementById(id);
+  const abierto = area.style.display === 'block';
+  area.style.display = abierto ? 'none' : 'block';
+  if(id === 'previewArea' && !abierto) actualizarPreview();
+}
+
+function copiarPreview(){
+  const ta = document.getElementById('previewText');
+  ta.select();
+  ta.setSelectionRange(0, 999999);
+  try{ document.execCommand('copy'); }catch(e){}
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(ta.value).catch(()=>{});
+  }
+}
+
+function armarPrompt(){
+  const variante = document.getElementById('selVariante').value;
+  const dinamica = document.getElementById('selDinamica').value;
+  const animo = document.getElementById('selAnimo').value;
+  const tempo = document.getElementById('selTempo').value;
+  const voz = document.getElementById('selVoz').value;
+  const tono = document.getElementById('selTono').value;
+
+  const instrumentos = Array.from(
+    document.querySelectorAll('#checkInstrumentos input[type=checkbox]:checked')
+  ).map(el => el.value);
+
+  const partes = [variante, ...instrumentos, tempo, dinamica, animo, voz];
+  if(tono) partes.push(tono);
+
+  document.getElementById('promptFinal').value = partes.filter(Boolean).join(', ');
+}
+
+function copiarPrompt(){
+  const ta = document.getElementById('promptFinal');
+  ta.select();
+  ta.setSelectionRange(0, 999999);
+  try{ document.execCommand('copy'); }catch(e){}
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(ta.value).catch(()=>{});
+  }
+}
+
+['selVoz','selTono','selVariante','selAnimo','selTempo','selDinamica'].forEach(id=>{
+  document.getElementById(id).addEventListener('change', armarPrompt);
+});
+document.querySelectorAll('#checkInstrumentos input[type=checkbox]').forEach(el=>{
+  el.addEventListener('change', armarPrompt);
+});
+armarPrompt();
+</script>
+
+</body>
+</html>
