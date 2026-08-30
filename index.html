@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mis Herramientas Web</title>
+  <link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0969da">
+  
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 600px; margin: 40px auto; padding: 0 20px; line-height: 1.6; }
+    h1 { border-bottom: 2px solid #ccc; padding-bottom: 10px; }
+    ul { list-style: none; padding: 0; }
+    li { margin: 10px 0; }
+    a { display: block; padding: 12px 16px; background: #f4f4f5; color: #0969da; text-decoration: none; border-radius: 6px; font-weight: 500; }
+    a:hover { background: #e4e4e7; }
+  </style>
+</head>
+<body>
+
+  <h1>Menú de Herramientas</h1>
+  <ul id="menu">Cargando herramientas...</ul>
+
+  <script>
+    // CONFIGURA AQUÍ TU USUARIO Y REPOSITORIO
+    const usuario = 'altimiras';
+    const repositorio = 'HH';
+
+    const urlAPI = `https://api.github.com/repos/${usuario}/${repositorio}/contents/`;
+
+    async function cargarHerramientas() {
+      try {
+        const respuesta = await fetch(urlAPI);
+        const archivos = await respuesta.json();
+        const lista = document.getElementById('menu');
+        lista.innerHTML = '';
+
+        // Filtra solo los archivos .html, excluyendo el propio index.html
+        const herramientas = archivos.filter(archivo => 
+          archivo.name.endsWith('.html') && archivo.name.toLowerCase() !== 'index.html'
+        );
+
+        if (herramientas.length === 0) {
+          lista.innerHTML = '<li>No se encontraron herramientas .html</li>';
+          return;
+        }
+
+        herramientas.forEach(archivo => {
+          const li = document.createElement('li');
+          const a = document.createElement('a');
+          
+          // Enlace relativo a la herramienta
+          a.href = archivo.name;
+          
+          // Formatea el nombre para que se vea limpio (ej: mi-herramienta.html -> Mi Herramienta)
+          const nombreLimpio = archivo.name
+            .replace('.html', '')
+            .replace(/[-_]/g, ' ')
+            .replace(/\b\w/g, l => l.toUpperCase());
+
+          a.textContent = nombreLimpio;
+          li.appendChild(a);
+          lista.appendChild(li);
+        });
+      } catch (error) {
+        console.error('Error al cargar la lista:', error);
+        document.getElementById('menu').innerHTML = '<li>Error al cargar las herramientas.</li>';
+      }
+    }
+
+    cargarHerramientas();
+  </script>
+</body>
+</html>
