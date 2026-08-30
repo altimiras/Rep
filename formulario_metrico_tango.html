@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Formulario de Métrica — Tango Tradicional (años 40)</title>
+<style>
+  :root{
+    --vino:#7a2233;
+    --vino-osc:#33101a;
+    --crema:#efe6da;
+    --papel:#fffaf4;
+    --linea:#d8c7b4;
+    --ok:#4a7c59;
+    --falta:#b0522a;
+    --sobra:#a03b3b;
+    --rima-a:#c9a227;
+    --rima-b:#3f6b7c;
+    --rima-c:#8a4a6b;
+    --texto:#2e1c1c;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    background:var(--crema);
+    font-family:Georgia, 'Iowan Old Style', serif;
+    color:var(--texto);
+    padding-bottom:60px;
+  }
+  header{
+    background:var(--vino-osc);
+    color:var(--papel);
+    padding:22px 18px 18px;
+    text-align:center;
+  }
+  header h1{
+    margin:0 0 4px;
+    font-size:1.4rem;
+    letter-spacing:0.5px;
+  }
+  header p{
+    margin:0;
+    font-size:0.85rem;
+    opacity:0.85;
+    font-family:-apple-system,sans-serif;
+  }
+  .bandoneon{
+    text-align:center;
+    font-size:0.75rem;
+    letter-spacing:3px;
+    color:var(--rima-a);
+    margin-top:8px;
+  }
+  main{
+    max-width:640px;
+    margin:0 auto;
+    padding:16px;
+  }
+  .estrofa{
+    background:var(--papel);
+    border:1px solid var(--linea);
+    border-radius:10px;
+    margin-bottom:22px;
+    overflow:hidden;
+    box-shadow:0 2px 6px rgba(51,16,26,0.10);
+  }
+  .estrofa-titulo{
+    background:var(--vino);
+    color:var(--papel);
+    padding:10px 14px;
+    font-family:-apple-system,sans-serif;
+  }
+  .estrofa-titulo h2{
+    margin:0;
+    font-size:1rem;
+  }
+  .estrofa-titulo span{
+    display:block;
+    font-size:0.72rem;
+    opacity:0.9;
+    margin-top:2px;
+  }
+  .linea-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:10px 12px;
+    border-bottom:1px solid var(--linea);
+  }
+  .linea-row:last-child{border-bottom:none}
+  .rima-marca{
+    width:26px;
+    height:26px;
+    border-radius:50%;
+    flex:0 0 auto;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:0.75rem;
+    font-weight:bold;
+    font-family:-apple-system,sans-serif;
+    color:#fff;
+  }
+  .rima-libre{
+    background:transparent;
+    color:var(--linea);
+    border:1.5px dashed var(--linea);
+  }
+  .campo{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    gap:3px;
+  }
+  input[type=text]{
+    font-family:Georgia, serif;
+    font-size:1rem;
+    padding:8px 10px;
+    border:1.5px solid var(--linea);
+    border-radius:6px;
+    background:#fffefb;
+    color:var(--texto);
+  }
+  input[type=text]:focus{
+    outline:none;
+    border-color:var(--vino);
+  }
+  .meta{
+    display:flex;
+    justify-content:space-between;
+    font-family:-apple-system,sans-serif;
+    font-size:0.72rem;
+    padding:0 2px;
+  }
+  .conteo{font-weight:bold}
+  .conteo.ok{color:var(--ok)}
+  .conteo.falta{color:var(--falta)}
+  .conteo.sobra{color:var(--sobra)}
+  .objetivo{color:#9a8b74}
+
+  .pausa-instrumental{
+    text-align:center;
+    padding:8px;
+    font-family:-apple-system,sans-serif;
+    font-size:0.72rem;
+    color:#9c8468;
+    font-style:italic;
+    background:repeating-linear-gradient(
+      90deg, transparent, transparent 6px, var(--linea) 6px, var(--linea) 8px
+    );
+  }
+
+  .leyenda{
+    max-width:640px;
+    margin:0 auto 20px;
+    padding:0 16px;
+    font-family:-apple-system,sans-serif;
+    font-size:0.78rem;
+    color:#6b5142;
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+  }
+  .leyenda span{display:flex;align-items:center;gap:5px}
+  .dot{width:12px;height:12px;border-radius:50%;display:inline-block}
+
+  .preview-box{
+    max-width:640px;
+    margin:0 auto;
+    padding:16px;
+  }
+  .preview-toggle{
+    width:100%;
+    padding:12px;
+    background:var(--vino-osc);
+    color:var(--papel);
+    border:none;
+    border-radius:8px;
+    font-family:-apple-system,sans-serif;
+    font-size:0.95rem;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .preview-toggle:active{background:var(--vino)}
+  #previewArea{
+    display:none;
+    margin-top:10px;
+    background:var(--papel);
+    border:1px solid var(--linea);
+    border-radius:8px;
+    padding:14px;
+  }
+  #previewText{
+    width:100%;
+    min-height:200px;
+    font-family:'Courier New', monospace;
+    font-size:0.85rem;
+    border:1px solid var(--linea);
+    border-radius:6px;
+    padding:10px;
+    background:#fffefb;
+    color:var(--texto);
+    resize:vertical;
+  }
+  .copiar-btn{
+    margin-top:8px;
+    padding:9px 14px;
+    background:var(--rima-b);
+    color:#fff;
+    border:none;
+    border-radius:6px;
+    font-family:-apple-system,sans-serif;
+    font-size:0.85rem;
+    cursor:pointer;
+  }
+  .nota{
+    max-width:640px;
+    margin:0 auto 30px;
+    padding:0 16px;
+    font-family:-apple-system,sans-serif;
+    font-size:0.75rem;
+    color:#8a7160;
+    line-height:1.5;
+  }
+
+  /* ANEXO */
+  .anexo{
+    max-width:640px;
+    margin:10px auto 40px;
+    padding:0 16px;
+  }
+  .anexo-cabecera{
+    background:var(--vino-osc);
+    color:var(--papel);
+    padding:14px 16px;
+    border-radius:10px 10px 0 0;
+    font-family:-apple-system,sans-serif;
+  }
+  .anexo-cabecera h2{margin:0 0 3px;font-size:1.05rem}
+  .anexo-cabecera span{font-size:0.75rem;opacity:0.85}
+  .anexo-cuerpo{
+    background:var(--papel);
+    border:1px solid var(--linea);
+    border-top:none;
+    border-radius:0 0 10px 10px;
+    padding:16px;
+  }
+  .controles{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    margin-bottom:14px;
+    font-family:-apple-system,sans-serif;
+  }
+  .control-item{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+  }
+  .control-item label{
+    font-size:0.72rem;
+    color:#8a7160;
+    font-weight:600;
+  }
+  .control-item select{
+    padding:8px 6px;
+    border:1.5px solid var(--linea);
+    border-radius:6px;
+    background:#fffefb;
+    font-family:-apple-system,sans-serif;
+    font-size:0.85rem;
+    color:var(--texto);
+  }
+  .check-row{
+    grid-column:1 / -1;
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    margin-top:2px;
+  }
+  .check-row label{
+    display:flex;
+    align-items:center;
+    gap:5px;
+    font-size:0.8rem;
+    font-family:-apple-system,sans-serif;
+    background:var(--crema);
+    padding:5px 9px;
+    border-radius:14px;
+    border:1px solid var(--linea);
+  }
+  #promptFinal{
+    width:100%;
+    min-height:70px;
+    font-family:'Courier New', monospace;
+    font-size:0.85rem;
+    border:1.5px solid var(--vino);
+    border-radius:6px;
+    padding:10px;
+    background:#fffefb;
+    color:var(--texto);
+    resize:vertical;
+  }
+  .tabla-tags{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:16px;
+    font-family:-apple-system,sans-serif;
+    font-size:0.78rem;
+  }
+  .tabla-tags th{
+    background:var(--vino);
+    color:var(--papel);
+    text-align:left;
+    padding:7px 8px;
+  }
+  .tabla-tags td{
+    padding:7px 8px;
+    border-bottom:1px solid var(--linea);
+    vertical-align:top;
+  }
+  .tabla-tags tr:nth-child(even) td{background:#fbf3ea}
+  .tag-code{
+    font-family:'Courier New', monospace;
+    font-size:0.76rem;
+    color:var(--vino-osc);
+    font-weight:600;
+  }
+  .aviso-tags{
+    font-family:-apple-system,sans-serif;
+    font-size:0.72rem;
+    color:#9c8468;
+    margin-top:10px;
+    line-height:1.5;
+    font-style:italic;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Formulario de métrica — Tango tradicional (años 40)</h1>
+  <p>Escribe cada verso. El conteo de sílabas se ajusta solo (con sinalefa aproximada).</p>
+  <div class="bandoneon">♪ ·· ♪ ·· ♪</div>
+</header>
+
+<div class="leyenda">
+  <span><span class="dot" style="background:var(--rima-a)"></span> riman entre sí (grupo A)</span>
+  <span><span class="dot" style="background:var(--rima-b)"></span> riman entre sí (grupo B)</span>
+  <span><span class="dot" style="border:1.5px dashed var(--linea);background:transparent"></span> verso libre</span>
+</div>
+
+<main>
+
+  <!-- PRIMERA PARTE -->
+  <div class="estrofa">
+    <div class="estrofa-titulo">
+      <h2>1. Primera parte</h2>
+      <span>4 versos endecasílabos (11 sílabas) · rima consonante cruzada ABAB</span>
+    </div>
+    <div id="primeraParte"></div>
+  </div>
+
+  <div class="pausa-instrumental">— variación de bandoneón —</div>
+
+  <!-- ESTRIBILLO -->
+  <div class="estrofa">
+    <div class="estrofa-titulo">
+      <h2>2. Estribillo</h2>
+      <span>4 versos octosílabos (8 sílabas) · rima consonante pareada AABB</span>
+    </div>
+    <div id="estribillo"></div>
+  </div>
+
+  <div class="pausa-instrumental">— pausa dramática / bandoneón sostenido —</div>
+
+  <!-- RECITADO -->
+  <div class="estrofa">
+    <div class="estrofa-titulo">
+      <h2>3. Recitado (puente hablado) — opcional</h2>
+      <span>Verso libre, sin patrón fijo de sílabas ni rima obligatoria</span>
+    </div>
+    <div id="recitado"></div>
+  </div>
+
+</main>
+
+<div class="preview-box">
+  <button class="preview-toggle" onclick="togglePreview()">Ver letra armada para pegar en Suno</button>
+  <div id="previewArea">
+    <textarea id="previewText" readonly></textarea>
+    <button class="copiar-btn" onclick="copiarPreview()">Copiar texto</button>
+  </div>
+</div>
+
+<p class="nota">
+  Nota: el conteo de sílabas es aproximado (sinalefa simple entre palabras). El tango tiene más libertad literaria que la cueca: si una línea queda a ±1 sílaba pero suena bien leída con la cadencia del tango (frases largas, algo de rubato), está bien dejarla así. El Recitado no tiene conteo porque tradicionalmente se declama libremente, sin ajustarse al compás.
+</p>
+
+<div class="anexo">
+  <div class="anexo-cabecera">
+    <h2>Anexo — Prompt de estilo para Suno</h2>
+    <span>Ajusta las variaciones y copia el prompt armado</span>
+  </div>
+  <div class="anexo-cuerpo">
+
+    <div class="controles">
+      <div class="control-item">
+        <label>Voz</label>
+        <select id="selVoz">
+          <option value="Spanish male vocals">Masculina (cantor)</option>
+          <option value="Spanish female vocals">Femenina</option>
+          <option value="Spanish male vocals, spoken recitado interlude">Masculina con recitado hablado</option>
+        </select>
+      </div>
+
+      <div class="control-item">
+        <label>Tono de la voz</label>
+        <select id="selTono">
+          <option value="">— sin especificar —</option>
+          <option value="deep, dramatic baritone voice">Grave / dramático</option>
+          <option value="bright tenor voice">Agudo / tenor</option>
+          <option value="raspy, weathered voice">Rasposo / curtido</option>
+        </select>
+      </div>
+
+      <div class="control-item">
+        <label>Variante</label>
+        <select id="selVariante">
+          <option value="1940s Argentine tango, orquesta tipica">Tango canción (orquesta típica clásica)</option>
+          <option value="1940s Argentine tango milonguero, rhythmic dance orchestra">Tango milonguero (más rítmico, bailable)</option>
+          <option value="1940s Argentine tango, dramatic ballad style">Tango canción dramático / lento</option>
+        </select>
+      </div>
+
+      <div class="control-item">
+        <label>Ánimo</label>
+        <select id="selAnimo">
+          <option value="melancholic, nostalgic">Melancólico / nostálgico</option>
+          <option value="dramatic, heartbroken">Dramático / desgarrado</option>
+          <option value="proud, defiant">Orgulloso / desafiante (compadrito)</option>
+          <option value="ironic, bittersweet">Irónico / agridulce</option>
+        </select>
+      </div>
+
+      <div class="control-item">
+        <label>Tempo</label>
+        <select id="selTempo">
+          <option value="slow, rubato">Lento con rubato (clásico)</option>
+          <option value="mid-tempo">Medio</option>
+          <option value="uptempo, danceable">Rápido (milonga)</option>
+        </select>
+      </div>
+
+      <div class="control-item">
+        <label>Compás</label>
+        <select id="selRitmo">
+          <option value="4/4 tango rhythm, marcato bass">4/4 marcado (marcato)</option>
+          <option value="4/4 tango rhythm, syncopated bandoneon">4/4 sincopado (bandoneón)</option>
+        </select>
+      </div>
+
+      <div class="check-row" id="checkInstrumentos">
+        <label><input type="checkbox" value="bandoneon" checked> Bandoneón</label>
+        <label><input type="checkbox" value="piano" checked> Piano</label>
+        <label><input type="checkbox" value="violin"> Violín</label>
+        <label><input type="checkbox" value="double bass"> Contrabajo</label>
+        <label><input type="checkbox" value="acoustic guitar"> Guitarra</label>
+      </div>
+    </div>
+
+    <textarea id="promptFinal" readonly></textarea>
+    <button class="copiar-btn" onclick="copiarPrompt()">Copiar prompt</button>
+
+    <table class="tabla-tags">
+      <thead>
+        <tr><th>Etiqueta</th><th>Efecto en el tango</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="tag-code">orquesta tipica</td><td>Sonido de orquesta clásica de los 40 (bandoneón + cuerdas + piano)</td></tr>
+        <tr><td class="tag-code">tango milonguero</td><td>Más rítmico y bailable, menos rubato</td></tr>
+        <tr><td class="tag-code">rubato</td><td>Flexibilidad de tempo típica del tango canción, frases que se estiran</td></tr>
+        <tr><td class="tag-code">marcato bass</td><td>Bajo marcado y firme, típico del tango más "duro" (estilo D'Arienzo)</td></tr>
+        <tr><td class="tag-code">syncopated bandoneon</td><td>Bandoneón más ornamentado y sincopado</td></tr>
+        <tr><td class="tag-code">deep, dramatic baritone voice</td><td>Voz grave y dramática, la más asociada al "cantor" clásico</td></tr>
+        <tr><td class="tag-code">spoken recitado interlude</td><td>Refuerza el quiebre hablado característico del recitado</td></tr>
+        <tr><td class="tag-code">proud, defiant</td><td>Ánimo "compadrito", desafiante, típico de tangos de barrio</td></tr>
+        <tr><td class="tag-code">ironic, bittersweet</td><td>Tono de crítica social o desengaño con humor amargo</td></tr>
+        <tr><td class="tag-code">double bass / acoustic guitar</td><td>Guitarra es más propia del tango canción íntimo que de la orquesta típica</td></tr>
+      </tbody>
+    </table>
+
+    <p class="aviso-tags">
+      Estas combinaciones son puntos de partida razonables, no reglas fijas — prueba y ajusta según el resultado real que te devuelva Suno.
+    </p>
+
+  </div>
+</div>
+
+<script>
+const VOCALES = "aeiouáéíóúüAEIOUÁÉÍÓÚÜ";
+
+function esVocal(c){ return VOCALES.indexOf(c) !== -1; }
+
+function limpiar(palabra){
+  return palabra.replace(/[.,;:!¡?¿"'«»()]/g,"");
+}
+
+function silabasPalabra(palabra){
+  palabra = limpiar(palabra).toLowerCase();
+  if(!palabra) return 0;
+  let normal = palabra.replace(/y/g, "i");
+  let grupos = normal.match(/[aeiouáéíóúü]+/g);
+  return grupos ? grupos.length : 0;
+}
+
+function empiezaConVocal(palabra){
+  palabra = limpiar(palabra).toLowerCase();
+  if(palabra.startsWith("h")) palabra = palabra.slice(1);
+  return palabra.length>0 && esVocal(palabra[0]);
+}
+
+function terminaConVocal(palabra){
+  palabra = limpiar(palabra).toLowerCase();
+  return palabra.length>0 && esVocal(palabra[palabra.length-1]);
+}
+
+function contarSilabas(linea){
+  let palabras = linea.trim().split(/\s+/).filter(p=>p.length>0);
+  if(palabras.length===0) return 0;
+  let total = 0;
+  let prevTerminaVocal = false;
+  for(let p of palabras){
+    let s = silabasPalabra(p);
+    total += s;
+    if(prevTerminaVocal && empiezaConVocal(p)){
+      total -= 1;
+    }
+    prevTerminaVocal = terminaConVocal(p);
+  }
+  return total;
+}
+
+// obj:null significa verso libre (sin conteo obligatorio)
+const ESTROFAS = {
+  primeraParte: [
+    {obj:11, grupo:'a'},
+    {obj:11, grupo:'b'},
+    {obj:11, grupo:'a'},
+    {obj:11, grupo:'b'}
+  ],
+  estribillo: [
+    {obj:8, grupo:'a'},
+    {obj:8, grupo:'a'},
+    {obj:8, grupo:'b'},
+    {obj:8, grupo:'b'}
+  ],
+  recitado: [
+    {obj:null, grupo:null},
+    {obj:null, grupo:null},
+    {obj:null, grupo:null}
+  ]
+};
+
+const COLORES = { a:'var(--rima-a)', b:'var(--rima-b)', c:'var(--rima-c)' };
+
+function construirEstrofa(id, config){
+  const contenedor = document.getElementById(id);
+  config.forEach((linea, idx)=>{
+    const row = document.createElement('div');
+    row.className = 'linea-row';
+
+    const marca = document.createElement('div');
+    marca.className = 'rima-marca' + (linea.grupo ? '' : ' rima-libre');
+    if(linea.grupo){
+      marca.style.background = COLORES[linea.grupo];
+      marca.textContent = linea.grupo.toUpperCase();
+    } else {
+      marca.textContent = '—';
+    }
+    row.appendChild(marca);
+
+    const campo = document.createElement('div');
+    campo.className = 'campo';
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = `Verso ${idx+1}`;
+    input.id = `${id}-${idx}`;
+
+    campo.appendChild(input);
+
+    if(linea.obj !== null){
+      const meta = document.createElement('div');
+      meta.className = 'meta';
+      const objetivo = document.createElement('span');
+      objetivo.className = 'objetivo';
+      objetivo.textContent = `objetivo: ${linea.obj} sílabas`;
+      const conteo = document.createElement('span');
+      conteo.className = 'conteo';
+      conteo.id = `${id}-count-${idx}`;
+      conteo.textContent = '0';
+      meta.appendChild(objetivo);
+      meta.appendChild(conteo);
+      campo.appendChild(meta);
+
+      input.addEventListener('input', ()=>{
+        const n = contarSilabas(input.value);
+        conteo.textContent = `${n} sílabas`;
+        conteo.className = 'conteo';
+        if(n === linea.obj){ conteo.classList.add('ok'); }
+        else if(n < linea.obj){ conteo.classList.add('falta'); }
+        else { conteo.classList.add('sobra'); }
+        actualizarPreview();
+      });
+    } else {
+      input.placeholder = `Verso libre ${idx+1}`;
+      input.addEventListener('input', actualizarPreview);
+    }
+
+    row.appendChild(campo);
+    contenedor.appendChild(row);
+  });
+}
+
+construirEstrofa('primeraParte', ESTROFAS.primeraParte);
+construirEstrofa('estribillo', ESTROFAS.estribillo);
+construirEstrofa('recitado', ESTROFAS.recitado);
+
+function valorLinea(id, idx){
+  const el = document.getElementById(`${id}-${idx}`);
+  return el ? el.value.trim() : '';
+}
+
+function actualizarPreview(){
+  let texto = '[Verse]\n';
+  ESTROFAS.primeraParte.forEach((_,i)=>{
+    const v = valorLinea('primeraParte', i);
+    if(v) texto += v + '\n';
+  });
+  texto += '\n[Chorus]\n';
+  ESTROFAS.estribillo.forEach((_,i)=>{
+    const v = valorLinea('estribillo', i);
+    if(v) texto += v + '\n';
+  });
+  const recitadoLineas = ESTROFAS.recitado.map((_,i)=>valorLinea('recitado', i)).filter(Boolean);
+  if(recitadoLineas.length){
+    texto += '\n[Spoken Word]\n' + recitadoLineas.join('\n') + '\n';
+  }
+  document.getElementById('previewText').value = texto;
+}
+
+function togglePreview(){
+  const area = document.getElementById('previewArea');
+  area.style.display = area.style.display === 'block' ? 'none' : 'block';
+  actualizarPreview();
+}
+
+function copiarPreview(){
+  const ta = document.getElementById('previewText');
+  ta.select();
+  ta.setSelectionRange(0, 999999);
+  try{ document.execCommand('copy'); }catch(e){}
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(ta.value).catch(()=>{});
+  }
+}
+
+function armarPrompt(){
+  const variante = document.getElementById('selVariante').value;
+  const ritmo = document.getElementById('selRitmo').value;
+  const animo = document.getElementById('selAnimo').value;
+  const tempo = document.getElementById('selTempo').value;
+  const voz = document.getElementById('selVoz').value;
+  const tono = document.getElementById('selTono').value;
+
+  const instrumentos = Array.from(
+    document.querySelectorAll('#checkInstrumentos input[type=checkbox]:checked')
+  ).map(el => el.value);
+
+  const partes = [variante, ...instrumentos, ritmo, tempo, animo, voz];
+  if(tono) partes.push(tono);
+
+  document.getElementById('promptFinal').value = partes.filter(Boolean).join(', ');
+}
+
+function copiarPrompt(){
+  const ta = document.getElementById('promptFinal');
+  ta.select();
+  ta.setSelectionRange(0, 999999);
+  try{ document.execCommand('copy'); }catch(e){}
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(ta.value).catch(()=>{});
+  }
+}
+
+['selVoz','selTono','selVariante','selAnimo','selTempo','selRitmo'].forEach(id=>{
+  document.getElementById(id).addEventListener('change', armarPrompt);
+});
+document.querySelectorAll('#checkInstrumentos input[type=checkbox]').forEach(el=>{
+  el.addEventListener('change', armarPrompt);
+});
+armarPrompt();
+</script>
+
+</body>
+</html>
