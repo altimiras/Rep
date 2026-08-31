@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Formulario de Métrica — Salsa Cubana Tradicional</title>
+<style>
+  :root{
+    --coral:#d94f2b;
+    --teal-osc:#0f3d40;
+    --crema:#fdf3e2;
+    --papel:#fffaf0;
+    --linea:#e8d9b6;
+    --ok:#2f7d4f;
+    --falta:#c07a1f;
+    --sobra:#c0392b;
+    --rima-a:#f2a71b;
+    --rima-b:#1f8a70;
+    --rima-c:#c23b6b;
+    --texto:#2a2018;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    background:var(--crema);
+    font-family:Georgia, 'Iowan Old Style', serif;
+    color:var(--texto);
+    padding-bottom:60px;
+  }
+  header{
+    background:var(--teal-osc);
+    color:var(--papel);
+    padding:22px 18px 18px;
+    text-align:center;
+  }
+  header h1{
+    margin:0 0 4px;
+    font-size:1.4rem;
+    letter-spacing:0.5px;
+  }
+  header p{
+    margin:0;
+    font-size:0.85rem;
+    opacity:0.9;
+    font-family:-apple-system,sans-serif;
+  }
+  .clave{
+    text-align:center;
+    font-size:0.75rem;
+    letter-spacing:3px;
+    color:var(--rima-a);
+    margin-top:8px;
+  }
+  main{
+    max-width:640px;
+    margin:0 auto;
+    padding:16px;
+  }
+  .estrofa{
+    background:var(--papel);
+    border:1px solid var(--linea);
+    border-radius:10px;
+    margin-bottom:22px;
+    overflow:hidden;
+    box-shadow:0 2px 6px rgba(15,61,64,0.10);
+  }
+  .estrofa-titulo{
+    background:var(--coral);
+    color:var(--papel);
+    padding:10px 14px;
+    font-family:-apple-system,sans-serif;
+  }
+  .estrofa-titulo h2{
+    margin:0;
+    font-size:1rem;
+  }
+  .estrofa-titulo span{
+    display:block;
+    font-size:0.72rem;
+    opacity:0.95;
+    margin-top:2px;
+  }
+  .linea-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:10px 12px;
+    border-bottom:1px solid var(--linea);
+  }
+  .linea-row:last-child{border-bottom:none}
+  .rima-marca{
+    width:26px;
+    height:26px;
+    border-radius:50%;
+    flex:0 0 auto;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:0.75rem;
+    font-weight:bold;
+    font-family:-apple-system,sans-serif;
+    color:#fff;
+  }
+  .rima-libre{
+    background:transparent;
+    color:var(--linea);
+    border:1.5px dashed var(--linea);
+  }
+  .campo{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    gap:3px;
+  }
+  input[type=text]{
+    font-family:Georgia, serif;
+    font-size:1rem;
+    padding:8px 10px;
+    border:1.5px solid var(--linea);
+    border-radius:6px;
+    background:#fffefb;
+    color:var(--texto);
+  }
+  input[type=text]:focus{
+    outline:none;
+    border-color:var(--coral);
+  }
+  .meta{
+    display:flex;
+    justify-content:space-between;
+    font-family:-apple-system,sans-serif;
+    font-size:0.72rem;
+    padding:0 2px;
+  }
+  .conteo{font-weight:bold}
+  .conteo.ok{color:var(--ok)}
+  .conteo.falta{color:var(--falta)}
+  .conteo.sobra{color:var(--sobra)}
+  .objetivo{color:#9a8567}
+
+  .nota-seccion{
+    padding:8px 14px 12px;
+    font-family:-apple-system,sans-serif;
+    font-size:0.75rem;
+    color:#8a7355;
+    font-style:italic;
+    background:var(--papel);
+  }
+
+  .pausa-instrumental{
+    text-align:center;
+    padding:8px;
+    font-family:-apple-system,sans-serif;
+    font-size:0.72rem;
+    color:#9c8560;
+    font-style:italic;
+    background:repeating-linear-gradient(
+      90deg, transparent, transparent 6px, var(--linea) 6px, var(--linea) 8px
+    );
+  }
+
+  .leyenda{
+    max-width:640px;
+    margin:0 auto 20px;
+    padding:0 16px;
+    font-family:-apple-system,sans-serif;
+    font-size:0.78rem;
+    color:#6b5638;
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+  }
+  .leyenda span{display:flex;align-items:center;gap:5px}
+  .dot{width:12px;height:12px;border-radius:50%;display:inline-block}
+
+  .preview-box{
+    max-width:640px;
+    margin:0 auto;
+    padding:16px;
+  }
+  .preview-toggle{
+    width:100%;
+    padding:12px;
+    background:var(--teal-osc);
+    color:var(--papel);
+    border:none;
+    border-radius:8px;
+    font-family:-apple-system,sans-serif;
+    font-size:0.95rem;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .preview-toggle:active{background:var(--coral)}
+  #previewArea{
+    display:none;
+    margin-top:10px;
+    background:var(--papel);
+    border:1px solid var(--linea);
+    border-radius:8px;
+    padding:14px;
+  }
+  #previewText{
+    width:100%;
+    min-height:200px;
+    font-family:'Courier New', monospace;
+    font-size:0.85rem;
+    border:1px solid var(--linea);
+    border-radius:6px;
+    padding:10px;
+    background:#fffefb;
+    color:var(--texto);
+    resize:vertical;
+  }
+  .copiar-btn{
+    margin-top:8px;
+    padding:9px 14px;
+    background:var(--rima-b);
+    color:#fff;
+    border:none;
+    border-radius:6px;
+    font-family:-apple-system,sans-serif;
+    font-size:0.85rem;
+    cursor:pointer;
+  }
+  .nota{
+    max-width:640px;
+    margin:0 auto 30px;
+    padding:0 16px;
+    font-family:-apple-system,sans-serif;
+    font-size:0.75rem;
+    color:#8a7355;
+    line-height:1.5;
+  }
+
+  /* ANEXO */
+  .anexo{
+    max-width:640px;
+    margin:10px auto 40px;
+    padding:0 16px;
+  }
+  .anexo-cabecera{
+    background:var(--teal-osc);
+    color:var(--papel);
+    padding:14px 16px;
+    border-radius:10px 10px 0 0;
+    font-family:-apple-system,sans-serif;
+  }
+  .anexo-cabecera h2{margin:0 0 3px;font-size:1.05rem}
+  .anexo-cabecera span{font-size:0.75rem;opacity:0.9}
+  .anexo-cuerpo{
+    background:var(--papel);
+    border:1px solid var(--linea);
+    border-top:none;
+    border-radius:0 0 10px 10px;
+    padding:16px;
+  }
+  .controles{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    margin-bottom:14px;
+    font-family:-apple-system,sans-serif;
+  }
+  .control-item{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+  }
+  .control-item label{
+    font-size:0.72rem;
+    color:#8a7355;
+    font-weight:600;
+  }
+  .control-item select{
+    padding:8px 6px;
+    border:1.5px solid var(--linea);
+    border-radius:6px;
+    background:#fffefb;
+    font-family:-apple-system,sans-serif;
+    font-size:0.85rem;
+    color:var(--texto);
+  }
+  .check-row{
+    grid-column:1 / -1;
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    margin-top:2px;
+  }
+  .check-row label{
+    display:flex;
+    align-items:center;
+    gap:5px;
+    font-size:0.8rem;
+    font-family:-apple-system,sans-serif;
+    background:var(--crema);
+    padding:5px 9px;
+    border-radius:14px;
+    border:1px solid var(--linea);
+  }
+  #promptFinal{
+    width:100%;
+    min-height:70px;
+    font-family:'Courier New', monospace;
+    font-size:0.85rem;
+    border:1.5px solid var(--coral);
+    border-radius:6px;
+    padding:10px;
+    background:#fffefb;
+    color:var(--texto);
+    resize:vertical;
+  }
+  .tabla-tags{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:16px;
+    font-family:-apple-system,sans-serif;
+    font-size:0.78rem;
+  }
+  .tabla-tags th{
+    background:var(--coral);
+    color:var(--papel);
+    text-align:left;
+    padding:7px 8px;
+  }
+  .tabla-tags td{
+    padding:7px 8px;
+    border-bottom:1px solid var(--linea);
+    vertical-align:top;
+  }
+  .tabla-tags tr:nth-child(even) td{background:#fbf1e0}
+  .tag-code{
+    font-family:'Courier New', monospace;
+    font-size:0.76rem;
+    color:var(--teal-osc);
+    font-weight:600;
+  }
+  .aviso-tags{
+    font-family:-apple-system,sans-serif;
+    font-size:0.72rem;
+    color:#9c8560;
+    margin-top:10px;
+    line-height:1.5;
+    font-style:italic;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Formulario de métrica — Salsa / Son Cubano Tradicional</h1>
+  <p>Escribe cada verso. El conteo de sílabas se ajusta solo (con sinalefa aproximada).</p>
+  <div class="clave">♪ · ·♪ · ♪ ·</div>
+</header>
+
+<div class="leyenda">
+  <span><span class="dot" style="background:var(--rima-a)"></span> riman entre sí (grupo A)</span>
+  <span><span class="dot" style="background:var(--rima-b)"></span> riman entre sí (grupo B)</span>
+  <span><span class="dot" style="border:1.5px dashed var(--linea);background:transparent"></span> verso libre</span>
+</div>
+
+<main>
+
+  <!-- ESTROFA NARRATIVA -->
+  <div class="estrofa">
+    <div class="estrofa-titulo">
+      <h2>1. Estrofa (son narrativo)</h2>
+      <span>4 versos octosílabos (8 sílabas) · rima asonante en pares (2° y 4°)</span>
+    </div>
+    <div id="estrofaNarrativa"></div>
+  </div>
+
+  <div class="pausa-instrumental">— entrada del montuno: piano y tumbao —</div>
+
+  <!-- CORO -->
+  <div class="estrofa">
+    <div class="estrofa-titulo">
+      <h2>2. Coro</h2>
+      <span>2 versos cortos · riman entre sí · se repite en cada vuelta del montuno</span>
+    </div>
+    <div id="coro"></div>
+    <div class="nota-seccion">Esta frase es la que canta todo el mundo — mientras más simple y pegajosa, mejor funciona.</div>
+  </div>
+
+  <!-- PREGÓN -->
+  <div class="estrofa">
+    <div class="estrofa-titulo">
+      <h2>3. Pregón (inspiración)</h2>
+      <span>Verso libre, sin patrón fijo — el sonero improvisa/responde al coro</span>
+    </div>
+    <div id="pregon"></div>
+    <div class="nota-seccion">En una grabación real, estas líneas se van alternando con el coro (llamada y respuesta). Aquí solo defines algunas de referencia; Suno seguirá su propio criterio para repetir el coro entre ellas.</div>
+  </div>
+
+</main>
+
+<div class="preview-box">
+  <button class="preview-toggle" onclick="togglePreview()">Ver letra armada para pegar en Suno</button>
+  <div id="previewArea">
+    <textarea id="previewText" readonly></textarea>
+    <button class="copiar-btn" onclick="copiarPreview()">Copiar texto</button>
+  </div>
+</div>
+
+<p class="nota">
+  Nota: el conteo de sílabas es aproximado (sinalefa simple entre palabras). El son/salsa es el más libre de los ritmos que hemos trabajado: la estrofa inicial es la única parte con patrón fijo — el montuno (coro-pregón) vive de la improvisación, así que no te limites demasiado ahí.
+</p>
+
+<div class="anexo">
+  <div class="anexo-cabecera">
+    <h2>Anexo — Prompt de estilo para Suno</h2>
+    <span>Ajusta las variaciones y copia el prompt armado</span>
+  </div>
+  <div class="anexo-cuerpo">
+
+    <div class="controles">
+      <div class="control-item">
+        <label>Voz</label>
+        <select id="selVoz">
+          <option value="Spanish male vocals, sonero style">Masculina (sonero)</option>
+          <option value="Spanish female vocals">Femenina</option>
+          <option value="Spanish male lead vocals, coro backing vocals, call and response">Solista + coro (llamada y respuesta)</option>
+        </select>
+      </div>
+
+      <div class="control-item">
+        <label>Tono de la voz</label>
+        <select id="selTono">
+          <option value="">— sin especificar —</option>
+          <option value="deep, powerful voice">Grave / potente</option>
+          <option value="bright, nasal tenor voice">Agudo / nasal (típico sonero)</option>
+          <option value="smooth, romantic voice">Suave / romántico</option>
+        </select>
+      </div>
+
+      <div class="control-item">
+        <label>Variante</label>
+        <select id="selVariante">
+          <option value="traditional Cuban son, acoustic ensemble">Son cubano tradicional (acústico)</option>
+          <option value="salsa dura, brass-heavy orchestra">Salsa dura (orquesta con metales)</option>
+          <option value="guaracha, upbeat and playful">Guaracha (rápida y humorística)</option>
+        </select>
+      </div>
+
+      <div class="control-item">
+        <label>Ánimo</label>
+        <select id="selAnimo">
+          <option value="joyful, festive">Alegre / festivo</option>
+          <option value="sabroso, flirtatious">Sabroso / coqueto</option>
+          <option value="romantic, bolero-influenced">Romántico (influencia bolero)</option>
+          <option value="playful, humorous">Pícaro / humorístico</option>
+        </select>
+      </div>
+
+      <div class="control-item">
+        <label>Tempo</label>
+        <select id="selTempo">
+          <option value="mid-tempo">Medio (son clásico)</option>
+          <option value="uptempo, danceable">Rápido (salsa dura / guaracha)</option>
+        </select>
+      </div>
+
+      <div class="control-item">
+        <label>Clave</label>
+        <select id="selRitmo">
+          <option value="son clave rhythm, 4/4">Clave de son (4/4)</option>
+          <option value="rumba clave rhythm, syncopated">Clave de rumba (más sincopada)</option>
+        </select>
+      </div>
+
+      <div class="check-row" id="checkInstrumentos">
+        <label><input type="checkbox" value="piano montuno" checked> Piano (montuno)</label>
+        <label><input type="checkbox" value="congas" checked> Congas</label>
+        <label><input type="checkbox" value="bongo"> Bongó</label>
+        <label><input type="checkbox" value="tres cubano"> Tres cubano</label>
+        <label><input type="checkbox" value="trumpet"> Trompeta</label>
+        <label><input type="checkbox" value="timbal"> Timbal</label>
+        <label><input type="checkbox" value="cowbell"> Campana / cencerro</label>
+      </div>
+    </div>
+
+    <textarea id="promptFinal" readonly></textarea>
+    <button class="copiar-btn" onclick="copiarPrompt()">Copiar prompt</button>
+
+    <table class="tabla-tags">
+      <thead>
+        <tr><th>Etiqueta</th><th>Efecto en la salsa/son</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="tag-code">traditional Cuban son</td><td>Sonido más orgánico y acústico, raíz del género</td></tr>
+        <tr><td class="tag-code">salsa dura</td><td>Versión más orquestada, con sección de metales potente</td></tr>
+        <tr><td class="tag-code">guaracha</td><td>Más rápida, festiva y con letras humorísticas</td></tr>
+        <tr><td class="tag-code">son clave / rumba clave</td><td>Define el patrón rítmico base que organiza todo lo demás</td></tr>
+        <tr><td class="tag-code">piano montuno</td><td>El patrón repetitivo de piano que sostiene el coro-pregón</td></tr>
+        <tr><td class="tag-code">tres cubano</td><td>Aporta el color más tradicional/rural del son</td></tr>
+        <tr><td class="tag-code">call and response</td><td>Refuerza la estructura coro-pregón (esencial en este género)</td></tr>
+        <tr><td class="tag-code">sonero style</td><td>Estilo vocal improvisado, característico del cantante líder</td></tr>
+        <tr><td class="tag-code">cowbell</td><td>Marca el pulso, muy presente en salsa dura y guaracha</td></tr>
+      </tbody>
+    </table>
+
+    <p class="aviso-tags">
+      Estas combinaciones son puntos de partida razonables, no reglas fijas — prueba y ajusta según el resultado real que te devuelva Suno.
+    </p>
+
+  </div>
+</div>
+
+<script>
+const VOCALES = "aeiouáéíóúüAEIOUÁÉÍÓÚÜ";
+
+function esVocal(c){ return VOCALES.indexOf(c) !== -1; }
+
+function limpiar(palabra){
+  return palabra.replace(/[.,;:!¡?¿"'«»()]/g,"");
+}
+
+function silabasPalabra(palabra){
+  palabra = limpiar(palabra).toLowerCase();
+  if(!palabra) return 0;
+  let normal = palabra.replace(/y/g, "i");
+  let grupos = normal.match(/[aeiouáéíóúü]+/g);
+  return grupos ? grupos.length : 0;
+}
+
+function empiezaConVocal(palabra){
+  palabra = limpiar(palabra).toLowerCase();
+  if(palabra.startsWith("h")) palabra = palabra.slice(1);
+  return palabra.length>0 && esVocal(palabra[0]);
+}
+
+function terminaConVocal(palabra){
+  palabra = limpiar(palabra).toLowerCase();
+  return palabra.length>0 && esVocal(palabra[palabra.length-1]);
+}
+
+function contarSilabas(linea){
+  let palabras = linea.trim().split(/\s+/).filter(p=>p.length>0);
+  if(palabras.length===0) return 0;
+  let total = 0;
+  let prevTerminaVocal = false;
+  for(let p of palabras){
+    let s = silabasPalabra(p);
+    total += s;
+    if(prevTerminaVocal && empiezaConVocal(p)){
+      total -= 1;
+    }
+    prevTerminaVocal = terminaConVocal(p);
+  }
+  return total;
+}
+
+// obj:null = verso libre sin conteo obligatorio
+const ESTROFAS = {
+  estrofaNarrativa: [
+    {obj:8, grupo:null},
+    {obj:8, grupo:'a'},
+    {obj:8, grupo:null},
+    {obj:8, grupo:'a'}
+  ],
+  coro: [
+    {obj:null, grupo:'b'},
+    {obj:null, grupo:'b'}
+  ],
+  pregon: [
+    {obj:null, grupo:null},
+    {obj:null, grupo:null},
+    {obj:null, grupo:null}
+  ]
+};
+
+const COLORES = { a:'var(--rima-a)', b:'var(--rima-b)', c:'var(--rima-c)' };
+
+function construirEstrofa(id, config){
+  const contenedor = document.getElementById(id);
+  config.forEach((linea, idx)=>{
+    const row = document.createElement('div');
+    row.className = 'linea-row';
+
+    const marca = document.createElement('div');
+    marca.className = 'rima-marca' + (linea.grupo ? '' : ' rima-libre');
+    if(linea.grupo){
+      marca.style.background = COLORES[linea.grupo];
+      marca.textContent = linea.grupo.toUpperCase();
+    } else {
+      marca.textContent = '—';
+    }
+    row.appendChild(marca);
+
+    const campo = document.createElement('div');
+    campo.className = 'campo';
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.id = `${id}-${idx}`;
+
+    if(linea.obj !== null){
+      input.placeholder = `Verso ${idx+1}`;
+      const meta = document.createElement('div');
+      meta.className = 'meta';
+      const objetivo = document.createElement('span');
+      objetivo.className = 'objetivo';
+      objetivo.textContent = `objetivo: ${linea.obj} sílabas`;
+      const conteo = document.createElement('span');
+      conteo.className = 'conteo';
+      conteo.id = `${id}-count-${idx}`;
+      conteo.textContent = '0';
+      meta.appendChild(objetivo);
+      meta.appendChild(conteo);
+
+      campo.appendChild(input);
+      campo.appendChild(meta);
+
+      input.addEventListener('input', ()=>{
+        const n = contarSilabas(input.value);
+        conteo.textContent = `${n} sílabas`;
+        conteo.className = 'conteo';
+        if(n === linea.obj){ conteo.classList.add('ok'); }
+        else if(n < linea.obj){ conteo.classList.add('falta'); }
+        else { conteo.classList.add('sobra'); }
+        actualizarPreview();
+      });
+    } else {
+      input.placeholder = `Verso libre ${idx+1}`;
+      campo.appendChild(input);
+      input.addEventListener('input', actualizarPreview);
+    }
+
+    row.appendChild(campo);
+    contenedor.appendChild(row);
+  });
+}
+
+construirEstrofa('estrofaNarrativa', ESTROFAS.estrofaNarrativa);
+construirEstrofa('coro', ESTROFAS.coro);
+construirEstrofa('pregon', ESTROFAS.pregon);
+
+function valorLinea(id, idx){
+  const el = document.getElementById(`${id}-${idx}`);
+  return el ? el.value.trim() : '';
+}
+
+function actualizarPreview(){
+  let texto = '[Verse]\n';
+  ESTROFAS.estrofaNarrativa.forEach((_,i)=>{
+    const v = valorLinea('estrofaNarrativa', i);
+    if(v) texto += v + '\n';
+  });
+  texto += '\n[Chorus]\n';
+  ESTROFAS.coro.forEach((_,i)=>{
+    const v = valorLinea('coro', i);
+    if(v) texto += v + '\n';
+  });
+  const pregonLineas = ESTROFAS.pregon.map((_,i)=>valorLinea('pregon', i)).filter(Boolean);
+  if(pregonLineas.length){
+    texto += '\n[Verse]\n' + pregonLineas.join('\n') + '\n';
+  }
+  document.getElementById('previewText').value = texto;
+}
+
+function togglePreview(){
+  const area = document.getElementById('previewArea');
+  area.style.display = area.style.display === 'block' ? 'none' : 'block';
+  actualizarPreview();
+}
+
+function copiarPreview(){
+  const ta = document.getElementById('previewText');
+  ta.select();
+  ta.setSelectionRange(0, 999999);
+  try{ document.execCommand('copy'); }catch(e){}
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(ta.value).catch(()=>{});
+  }
+}
+
+function armarPrompt(){
+  const variante = document.getElementById('selVariante').value;
+  const ritmo = document.getElementById('selRitmo').value;
+  const animo = document.getElementById('selAnimo').value;
+  const tempo = document.getElementById('selTempo').value;
+  const voz = document.getElementById('selVoz').value;
+  const tono = document.getElementById('selTono').value;
+
+  const instrumentos = Array.from(
+    document.querySelectorAll('#checkInstrumentos input[type=checkbox]:checked')
+  ).map(el => el.value);
+
+  const partes = [variante, ...instrumentos, ritmo, tempo, animo, voz];
+  if(tono) partes.push(tono);
+
+  document.getElementById('promptFinal').value = partes.filter(Boolean).join(', ');
+}
+
+function copiarPrompt(){
+  const ta = document.getElementById('promptFinal');
+  ta.select();
+  ta.setSelectionRange(0, 999999);
+  try{ document.execCommand('copy'); }catch(e){}
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(ta.value).catch(()=>{});
+  }
+}
+
+['selVoz','selTono','selVariante','selAnimo','selTempo','selRitmo'].forEach(id=>{
+  document.getElementById(id).addEventListener('change', armarPrompt);
+});
+document.querySelectorAll('#checkInstrumentos input[type=checkbox]').forEach(el=>{
+  el.addEventListener('change', armarPrompt);
+});
+armarPrompt();
+</script>
+
+</body>
+</html>
