@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Asistente de Letras Musicales & Métrica Poética</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #1e293b;
+      --card: #334155;
+      --accent: #6366f1;
+      --accent-hover: #4f46e5;
+      --text: #f8fafc;
+      --subtext: #94a3b8;
+      --border: #475569;
+      --syllable-good: #22c55e;
+      --syllable-warn: #eab308;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 24px;
+      line-height: 1.5;
+    }
+    .container {
+      max-width: 1050px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    header {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 12px;
+    }
+    h1 { margin: 0 0 6px 0; font-size: 1.75rem; color: #fff; }
+    p.subtitle { margin: 0; color: var(--subtext); font-size: 0.95rem; }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2);
+    }
+    .card-title {
+      font-weight: 700;
+      font-size: 1.1rem;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .badge {
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.75rem;
+      padding: 2px 8px;
+      border-radius: 12px;
+    }
+    textarea, select, input {
+      width: 100%;
+      background: #090d16;
+      border: 1px solid var(--border);
+      color: #fff;
+      padding: 10px 12px;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      margin-top: 6px;
+    }
+    textarea:focus, select:focus, input:focus {
+      outline: 2px solid var(--accent);
+      border-color: transparent;
+    }
+    textarea { resize: vertical; }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
+    button {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.2s;
+    }
+    button:hover { background: var(--accent-hover); }
+    .btn-secondary { background: #475569; }
+    .btn-secondary:hover { background: #64748b; }
+    .tags-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+    .tag-btn {
+      background: var(--card);
+      color: #cbd5e1;
+      font-size: 0.8rem;
+      padding: 4px 10px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+    }
+    .tag-btn:hover { background: var(--accent); color: white; }
+    .editor-container {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 16px;
+    }
+    @media (max-width: 850px) { .editor-container { grid-template-columns: 1fr; } }
+    .lyrics-editor {
+      min-height: 320px;
+      font-family: "Courier New", Courier, monospace;
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+    .syllable-inspector {
+      background: #090d16;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 12px;
+      max-height: 400px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 0.85rem;
+    }
+    .line-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 2px 0;
+      border-bottom: 1px solid #1e293b;
+    }
+    .line-row.section-header {
+      color: #818cf8;
+      font-weight: bold;
+      border-bottom: 1px dashed var(--accent);
+      margin-top: 6px;
+    }
+    .count-badge {
+      background: #1e293b;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-weight: bold;
+    }
+    .count-8 { color: var(--syllable-good); }
+    .count-11 { color: #38bdf8; }
+    .guide-box {
+      background: #090d16;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 12px;
+      margin-top: 10px;
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <h1>Adaptador Métrico & Asistente de Letras Musicales</h1>
+    <p class="subtitle">Transforma relatos e historias en letras métricamente adaptadas con análisis de sílabas y sinalefas en tiempo real.</p>
+  </header>
+
+  <div class="card">
+    <div class="card-title">1. Configuración de API Key <span class="badge">Google AI Studio</span></div>
+    <input type="password" id="apiKey" placeholder="Pega tu GEMINI_API_KEY aquí">
+  </div>
+
+  <div class="card">
+    <div class="card-title">2. Carga de Historia y Selección de Ritmo</div>
+    <textarea id="storyInput" style="height: 110px;" placeholder="Escribe o pega aquí tu historia, relato o texto narrativo..."></textarea>
+    
+    <div class="grid-2" style="margin-top: 12px;">
+      <div>
+        <label><strong>Ritmo / Estilo Objetivo</strong></label>
+        <select id="rhythmSelect" onchange="updateTagGuide()">
+          <optgroup label="Estilos Populares">
+            <option value="Bolero (Octosílabo / 8 sílabas métricas, tempo lento, romántico/melancólico)">Bolero (8 sílabas)</option>
+            <option value="Rock Clásico (Versos octosílabos / decasílabos, acentuación rítmica fuerte, energía alta)">Rock Clásico (8-10 sílabas)</option>
+            <option value="Cumbia / Tropical (Versos cortos de 6 a 8 sílabas, cadencia bailable)">Cumbia (6-8 sílabas)</option>
+            <option value="Balada Pop / Canción de Autor (Hendecashílabo / 11 sílabas y Octosílabos, expresivo)">Balada / Pop (8-11 sílabas)</option>
+            <option value="Tango (Métrica octosílaba muy marcada, síncopa dramática)">Tango (8 sílabas marcadas)</option>
+          </optgroup>
+          <optgroup label="Salsa y Caribe">
+            <option value="Salsa Clásica (Octosílabos y heptasílabos 7-8 sílabas, clave 3/2 o 2/3, pregones y coros pegajosos)">Salsa Clásica (7-8 sílabas)</option>
+            <option value="Salsa Romántica (Octosílabos y hendecasílabos 8-11 sílabas, ritmo suave, enfoque lírico de amor)">Salsa Romántica (8-11 sílabas)</option>
+            <option value="Son Cubano / Guajira (Octosílabos 8 sílabas, estructura de verso y montuno/estribillo)">Son Cubano / Guajira (8 sílabas)</option>
+          </optgroup>
+          <optgroup label="Rock, Twist & Heavy">
+            <option value="Rock and Roll Clásico (Versos de 8 sílabas con rima AABB o AAAA, estructura de 12 compases, ritmo alegre y acentuado)">Rock and Roll (8 sílabas)</option>
+            <option value="Rockabilly (Versos métricos cortos de 6 a 8 sílabas, cadencia rápida, acentos marcados)">Rockabilly (6-8 sílabas)</option>
+            <option value="Twist (Versos muy rítmicos de 6 a 8 sílabas, frases cortas, estribillos repetitivos y contagiosos)">Twist (6-8 sílabas)</option>
+            <option value="Slow Rock / Rock Balada (Versos de 8 a 11 sílabas, tempo lento en 6/8 o 4/4, intensidad creciente)">Slow Rock / Rock Balada (8-11 sílabas)</option>
+            <option value="Heavy Metal / Hard Rock (Versos octosílabos y decasílabos 8-10 sílabas, lenguaje épico, lírica potente y directa)">Metal / Hard Rock (8-10 sílabas)</option>
+          </optgroup>
+          <optgroup label="Valses">
+            <option value="Vals Criollo / Vals Peruano (Octosílabos y heptasílabos 7-8 sílabas, compás de 3/4, cadencia nostálgica y pausada)">Vals Criollo / Peruano (7-8 sílabas)</option>
+            <option value="Vals Vienés / Clásico (Hendecasílabos y octosílabos 8-11 sílabas, compás de 3/4, elegante y fluído)">Vals Clásico / Vienés (8-11 sílabas)</option>
+          </optgroup>
+          <optgroup label="Folclore Sudamericano">
+            <option value="Tonada Chilena (Cuartetas u octavas octosílabas de 8 sílabas con cogollo opcional, compás de 6/8 o 3/4, carácter melancólico o festivo)">Tonada Chilena (8 sílabas)</option>
+            <option value="Zamba Argentina (Estrofas de 4 versos octosílabos y pentasílabos 8 y 5 sílabas alternadas, compás de 6/8, ritmo pausado y poético)">Zamba Argentina (8 y 5 sílabas)</option>
+          </optgroup>
+        </select>
+      </div>
+      <div>
+        <label><strong>Estructura de Canción</strong></label>
+        <select id="structureSelect">
+          <option value="[Verse 1] - [Chorus] - [Verse 2] - [Chorus] - [Bridge] - [Chorus] - [Outro]">Estándar (Verso-Coro-Verso-Coro-Puente-Coro)</option>
+          <option value="[Verse 1] - [Verse 2] - [Chorus] - [Verse 3] - [Outro]">Narrativa Directa</option>
+          <option value="[Intro] - [Verse 1] - [Chorus] - [Guitar Solo] - [Chorus] - [Outro]">Estructura de Rock</option>
+        </select>
+      </div>
+    </div>
+
+    <button onclick="generateLyrics()" style="margin-top: 16px; width: 100%;">⚡ Adaptar Historia a Letra Musical</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title">3. Edición, Guía de Etiquetas y Validador Métrico</div>
+    
+    <div id="dynamicTags" class="tags-bar"></div>
+    <div id="rhythmGuide" class="guide-box"></div>
+
+    <div class="editor-container" style="margin-top: 12px;">
+      <div>
+        <textarea id="lyricsEditor" class="lyrics-editor" oninput="analyzeLyrics()" placeholder="La letra generada aparecerá aquí... Puedes editarla en tiempo real y ver la cuenta métrica a la derecha."></textarea>
+      </div>
+      <div>
+        <div style="font-weight:600; font-size:0.85rem; margin-bottom:6px; color:var(--subtext);">
+          RECUENTO DE SÍLABAS POÉTICAS<br>
+          <small>(Aplica Sinalefas y Ley del Acento Final)</small>
+        </div>
+        <div id="syllableInspector" class="syllable-inspector">
+          <div style="color:var(--subtext); text-align:center; padding-top:20px;">Esperando texto...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">4. Prompt de Estilo para IA Musical (Suno / Udio)</div>
+    
+    <label style="font-size:0.85rem; color:var(--subtext);">Modificadores Rápidos de Estilo (Haz clic para agregar al Prompt):</label>
+    
+    <div style="margin-top: 6px;">
+      <span style="font-size:0.8rem; color:var(--subtext);">Voz:</span>
+      <div class="tags-bar">
+        <button class="tag-btn" onclick="appendStyleTag('male vocal')">Male Vocal</button>
+        <button class="tag-btn" onclick="appendStyleTag('female vocal')">Female Vocal</button>
+        <button class="tag-btn" onclick="appendStyleTag('raspy vocals')">Raspy Vocal</button>
+        <button class="tag-btn" onclick="appendStyleTag('choral harmonies')">Harmonies</button>
+      </div>
+
+      <span style="font-size:0.8rem; color:var(--subtext);">Tempo / Dinámica:</span>
+      <div class="tags-bar">
+        <button class="tag-btn" onclick="appendStyleTag('fast tempo')">Fast Tempo</button>
+        <button class="tag-btn" onclick="appendStyleTag('slow tempo')">Slow Tempo</button>
+        <button class="tag-btn" onclick="appendStyleTag('syncopated rhythm')">Syncopated</button>
+        <button class="tag-btn" onclick="appendStyleTag('dramatic buildup')">Dramatic Buildup</button>
+      </div>
+
+      <span style="font-size:0.8rem; color:var(--subtext);">Instrumentación & Efectos:</span>
+      <div class="tags-bar">
+        <button class="tag-btn" onclick="appendStyleTag('brass section')">Brass Section</button>
+        <button class="tag-btn" onclick="appendStyleTag('acoustic guitar solo')">Acoustic Guitar Solo</button>
+        <button class="tag-btn" onclick="appendStyleTag('electric guitar riff')">Electric Guitar Riff</button>
+        <button class="tag-btn" onclick="appendStyleTag('accordion')">Accordion</button>
+        <button class="tag-btn" onclick="appendStyleTag('percussion break')">Percussion Break</button>
+        <button class="tag-btn" onclick="appendStyleTag('abrupt stop')">Abrupt Stop</button>
+      </div>
+    </div>
+
+    <input type="text" id="stylePrompt" placeholder="Style prompt optimizado en inglés...">
+
+    <div style="display:flex; justify-content:space-between; margin-top:12px; gap:10px;">
+      <button class="btn-secondary" onclick="copyStylePrompt()">📋 Copiar Prompt de Estilo</button>
+      <button class="btn-secondary" onclick="downloadAll()">💾 Descargar Archivo Completo (.txt)</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const GUIDES = {
+  "Salsa": {
+    tags: ["[Verse 1]", "[Chorus]", "[Montuno]", "[Pregón]", "[Brass Break]", "[Percussion Solo]", "[Outro]"],
+    info: "💡 <b>Guía Salsa:</b> Estructura ideal: Versos -> Coro -> Montuno (sección bailable de contrapunto) -> Pregón (guieo del cantante) -> Solo de Percusión/Vientos."
+  },
+  "Rock": {
+    tags: ["[Intro]", "[Verse 1]", "[Chorus]", "[Guitar Solo]", "[Riff Break]", "[Bridge]", "[Outro]"],
+    info: "💡 <b>Guía Rock / Metal:</b> Puedes insertar [Guitar Solo] o [Riff Break] tras el segundo coro para elevar la tensión."
+  },
+  "Twist": {
+    tags: ["[Intro]", "[Verse 1]", "[Chorus]", "[Saxophone Solo]", "[Break]", "[Outro]"],
+    info: "💡 <b>Guía Twist / Rockabilly:</b> Destacan ritmos acelerados, intervenciones breves de saxofón y cortes repentinos de batería ([Break])."
+  },
+  "Tonada": {
+    tags: ["[Intro]", "[Cuarteta 1]", "[Cogollo]", "[Estribillo]", "[Interludio]", "[Outro]"],
+    info: "💡 <b>Guía Tonada Chilena:</b> Incluye la posibilidad de agregar un [Cogollo] (dedicatoria final tradicional) o intercalar repeticiones octosílabas."
+  },
+  "Zamba": {
+    tags: ["[Primera]", "[Estrofa 1]", "[Estribillo]", "[Segunda]", "[Solo de Guitarra]", "[Outro]"],
+    info: "💡 <b>Guía Zamba Argentina:</b> Dividida tradicionalmente en 'Primera' y 'Segunda'. Versos alternados de 8 y 5 sílabas métricas."
+  },
+  "Default": {
+    tags: ["[Verse 1]", "[Verse 2]", "[Chorus]", "[Bridge]", "[Instrumental Solo]", "[Outro]"],
+    info: "💡 <b>Guía General:</b> Agrega etiquetas según el flujo del tema. Mantén las estrofas en 8 u 11 sílabas métricas para mejor cadencia."
+  }
+};
+
+function updateTagGuide() {
+  const rhythm = document.getElementById('rhythmSelect').value;
+  let key = "Default";
+  if (rhythm.includes("Salsa") || rhythm.includes("Son")) key = "Salsa";
+  else if (rhythm.includes("Rock") || rhythm.includes("Metal")) key = "Rock";
+  else if (rhythm.includes("Twist") || rhythm.includes("Rockabilly")) key = "Twist";
+  else if (rhythm.includes("Tonada")) key = "Tonada";
+  else if (rhythm.includes("Zamba")) key = "Zamba";
+
+  const data = GUIDES[key];
+  const bar = document.getElementById('dynamicTags');
+  bar.innerHTML = `<span style="font-size:0.85rem; color:var(--subtext); margin-right:6px; align-self:center;">Etiquetas sugeridas:</span>`;
+  
+  data.tags.forEach(t => {
+    bar.innerHTML += `<button class="tag-btn" onclick="insertTag('${t}')">${t}</button>`;
+  });
+
+  document.getElementById('rhythmGuide').innerHTML = data.info;
+}
+
+const VOCALES_FUERTES = ['a', 'e', 'o', 'á', 'é', 'ó'];
+const VOCALES_DEBILES = ['i', 'u', 'ü', 'y'];
+const VOCALES = [...VOCALES_FUERTES, ...VOCALES_DEBILES, 'í', 'ú'];
+
+function esVocal(c) { return VOCALES.includes(c.toLowerCase()); }
+
+function dividirEnSilabas(palabra) {
+  let clean = palabra.toLowerCase().replace(/[^a-záéíóúüñ]/g, '');
+  if (!clean) return [];
+  let silabas = [];
+  let actual = "";
+
+  for (let i = 0; i < clean.length; i++) {
+    let char = clean[i];
+    actual += char;
+
+    if (esVocal(char)) {
+      let next = clean[i + 1];
+      let next2 = clean[i + 2];
+
+      if (next && !esVocal(next)) {
+        if (next2 && !esVocal(next2)) {
+          let grupo = next + next2;
+          if (['bl','cl','fl','gl','pl','br','cr','dr','fr','gr','pr','tr'].includes(grupo)) {
+            silabas.push(actual);
+            actual = "";
+          } else {
+            actual += next;
+            i++;
+            silabas.push(actual);
+            actual = "";
+          }
+        } else if (next2 && esVocal(next2)) {
+          silabas.push(actual);
+          actual = "";
+        }
+      }
+    }
+  }
+  if (actual) silabas.push(actual);
+  return silabas.length > 0 ? silabas : [clean];
+}
+
+function calcularMetricaPoeticaVerso(verso) {
+  let trim = verso.trim();
+  if (!trim || trim.startsWith('[')) return { tipo: 'header', text: trim };
+
+  let palabras = trim.split(/\s+/);
+  if (palabras.length === 0) return { tipo: 'empty' };
+
+  let totalGramaticales = 0;
+  let conteoSinalefas = 0;
+
+  for (let i = 0; i < palabras.length; i++) {
+    let sil = dividirEnSilabas(palabras[i]);
+    totalGramaticales += sil.length;
+
+    if (i < palabras.length - 1) {
+      let p1 = palabras[i].toLowerCase().replace(/[^a-záéíóúüñ]/g, '');
+      let p2 = palabras[i+1].toLowerCase().replace(/[^a-záéíóúüñ]/g, '');
+
+      if (p1.length > 0 && p2.length > 0) {
+        let ult = p1[p1.length - 1];
+        let pri = p2[0];
+        if (pri === 'h' && p2.length > 1) pri = p2[1];
+
+        if (esVocal(ult) && esVocal(pri)) {
+          conteoSinalefas++;
+        }
+      }
+    }
+  }
+
+  let ultPalabra = palabras[palabras.length - 1].toLowerCase().replace(/[^a-záéíóúüñ]/g, '');
+  let ajuste = 0;
+  if (ultPalabra) {
+    if (/[áéíóú]$/.test(ultPalabra) || (/[aeiou]s$/.test(ultPalabra) === false && !/[aeiou]$/.test(ultPalabra))) {
+      if (/[áéíóú]/.test(ultPalabra)) ajuste = 1;
+    } else if (/[áéíóú].+..$/.test(ultPalabra)) {
+      ajuste = -1;
+    }
+  }
+
+  let final = totalGramaticales - conteoSinalefas + ajuste;
+  if (final < 1) final = 1;
+
+  return { tipo: 'line', text: trim, metricaFinal: final };
+}
+
+function analyzeLyrics() {
+  const text = document.getElementById('lyricsEditor').value;
+  const inspector = document.getElementById('syllableInspector');
+  const lines = text.split('\n');
+  inspector.innerHTML = '';
+
+  lines.forEach((line) => {
+    let res = calcularMetricaPoeticaVerso(line);
+    if (res.tipo === 'header') {
+      let div = document.createElement('div');
+      div.className = 'line-row section-header';
+      div.textContent = res.text;
+      inspector.appendChild(div);
+    } else if (res.tipo === 'line') {
+      let div = document.createElement('div');
+      div.className = 'line-row';
+
+      let textSpan = document.createElement('span');
+      textSpan.style.whiteSpace = 'nowrap';
+      textSpan.style.overflow = 'hidden';
+      textSpan.style.textOverflow = 'ellipsis';
+      textSpan.style.maxWidth = '220px';
+      textSpan.textContent = res.text;
+
+      let badgeSpan = document.createElement('span');
+      badgeSpan.className = 'count-badge';
+      if (res.metricaFinal === 8) badgeSpan.classList.add('count-8');
+      if (res.metricaFinal === 11) badgeSpan.classList.add('count-11');
+      badgeSpan.textContent = `${res.metricaFinal} síl.`;
+
+      div.appendChild(textSpan);
+      div.appendChild(badgeSpan);
+      inspector.appendChild(div);
+    }
+  });
+}
+
+async function generateLyrics() {
+  const apiKey = document.getElementById('apiKey').value.trim();
+  const story = document.getElementById('storyInput').value.trim();
+  const rhythm = document.getElementById('rhythmSelect').value;
+  const structure = document.getElementById('structureSelect').value;
+
+  if (!apiKey) return alert("Por favor ingresa tu API Key de Google AI Studio.");
+  if (!story) return alert("Por favor ingresa una historia para adaptar.");
+
+  const prompt = `
+Eres un compositor métrico profesional de canciones en español.
+Tu tarea es convertir la siguiente historia en una letra estructurada adaptada al género/métrica: ${rhythm}.
+Sigue esta estructura general: ${structure}.
+
+REGLAS STRICTAS DE MÉTRICA:
+1. Cuida la acentuación rítmica y la cantidad de sílabas por verso.
+2. Usa etiquetas de sección entre corchetes exactamente como: [Verse 1], [Chorus], [Bridge], [Guitar Solo], etc.
+3. No agregues comentarios extras fuera de las secciones pedidas.
+
+FORMATO DE SALIDA EXACTO:
+---LETRA---
+[Intro]
+...
+
+---STYLE---
+(Genera un prompt de estilo conciso en inglés de máximo 150 caracteres para Suno/Udio).
+
+HISTORIA ORIGINAL:
+${story}
+`;
+
+  const btn = document.querySelector("button[onclick='generateLyrics()']");
+  const origText = btn ? btn.textContent : '';
+  if (btn) { btn.textContent = "⏳ Generando letra con IA..."; btn.disabled = true; }
+
+  try {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+    });
+
+    const data = await response.json();
+    if (data.error) throw new Error(data.error.message);
+
+    const resultText = data.candidates[0].content.parts[0].text;
+    const parts = resultText.split('---STYLE---');
+    const lyrics = parts[0].replace('---LETRA---', '').trim();
+    const style = parts[1] ? parts[1].trim() : '';
+
+    document.getElementById('lyricsEditor').value = lyrics;
+    document.getElementById('stylePrompt').value = style;
+    analyzeLyrics();
+
+  } catch (err) {
+    alert("Error al conectar con la API de Gemini: " + err.message);
+  } finally {
+    if (btn) { btn.textContent = origText; btn.disabled = false; }
+  }
+}
+
+function insertTag(tag) {
+  const editor = document.getElementById('lyricsEditor');
+  const start = editor.selectionStart;
+  const end = editor.selectionEnd;
+  const text = editor.value;
+  editor.value = text.substring(0, start) + tag + "\n" + text.substring(end);
+  analyzeLyrics();
+}
+
+function appendStyleTag(tag) {
+  const input = document.getElementById('stylePrompt');
+  if (input.value.trim().length > 0) {
+    input.value += `, ${tag}`;
+  } else {
+    input.value = tag;
+  }
+}
+
+function copyStylePrompt() {
+  const promptText = document.getElementById('stylePrompt').value;
+  if (!promptText) return alert("El prompt de estilo está vacío.");
+
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(promptText).then(() => {
+      alert("Prompt de estilo copiado al portapapeles.");
+    }).catch(() => fallbackCopy(promptText));
+  } else {
+    fallbackCopy(promptText);
+  }
+}
+
+function fallbackCopy(text) {
+  const textArea = document.createElement("textarea");
+  textArea.value = text;
+  document.body.appendChild(textArea);
+  textArea.focus();
+  textArea.select();
+  try {
+    document.execCommand('copy');
+    alert("Prompt de estilo copiado al portapapeles.");
+  } catch (err) {
+    alert("No se pudo copiar automáticamente. Por favor selecciónalo y cópialo manualmente.");
+  }
+  document.body.removeChild(textArea);
+}
+
+function downloadAll() {
+  const lyrics = document.getElementById('lyricsEditor').value;
+  const style = document.getElementById('stylePrompt').value;
+  const rhythm = document.getElementById('rhythmSelect').value;
+  const structure = document.getElementById('structureSelect').value;
+  const story = document.getElementById('storyInput').value;
+
+  if (!lyrics) return alert("No hay letra cargada para descargar.");
+
+  const fullContent = `==================================================
+REGISTRO DE ADAPTACIÓN MUSICAL
+==================================================
+RITMO SELECCIONADO: ${rhythm}
+ESTRUCTURA BASE: ${structure}
+
+=== HISTORIA ORIGINAL ===
+${story}
+
+=== PROMPT DE ESTILO GENERADO / AJUSTADO (SUNO / UDIO) ===
+${style}
+
+=== LETRA Y ESTRUCTURA CON MÉTRICA ===
+${lyrics}
+`;
+
+  // Incorporar marca BOM (\uFEFF) para forzar lectura UTF-8 correcta en Windows / Bloc de Notas
+  const blob = new Blob(['\uFEFF' + fullContent], { type: 'text/plain;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `cancion_${Date.now()}.txt`;
+  a.click();
+}
+
+// Inicializar la guía de etiquetas al cargar la página
+window.onload = updateTagGuide;
+</script>
+</body>
+</html>
