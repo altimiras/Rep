@@ -1,0 +1,1219 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Consola de Prompts — Suno AI</title>
+<style>
+  :root{
+    --bg: #171614;
+    --panel: #1f1d1a;
+    --panel-raised: #262320;
+    --line: #3a352e;
+    --copper: #c8793f;
+    --copper-dim: #8a532a;
+    --vu-green: #8faa6b;
+    --vu-amber: #d9a441;
+    --cream: #eee6d8;
+    --cream-dim: #a89f8f;
+    --danger: #b1503f;
+    --mono: 'JetBrains Mono', 'Courier New', monospace;
+    --disp: 'Oswald', 'Arial Narrow', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(ellipse at 20% 0%, #201d19 0%, var(--bg) 60%);
+    color:var(--cream);
+    font-family: var(--mono);
+    font-size:14px;
+    line-height:1.5;
+    padding:18px;
+  }
+  @font-face{
+    font-family:'Oswald';
+    src:local('Oswald');
+  }
+  header{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    border-bottom:2px solid var(--copper-dim);
+    padding-bottom:12px;
+    margin-bottom:18px;
+    flex-wrap:wrap;
+    gap:6px;
+  }
+  h1{
+    font-family:var(--disp);
+    font-weight:600;
+    letter-spacing:0.5px;
+    font-size:22px;
+    margin:0;
+    color:var(--cream);
+    text-transform:uppercase;
+  }
+  h1 span{color:var(--copper);}
+  .subtitle{color:var(--cream-dim); font-size:12px;}
+
+  .rack{
+    display:grid;
+    grid-template-columns: 1fr;
+    gap:14px;
+  }
+  @media(min-width:900px){
+    .rack{grid-template-columns: 340px 1fr;}
+  }
+
+  .module{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:3px;
+    padding:14px;
+    position:relative;
+  }
+  .module::before{
+    content:attr(data-label);
+    position:absolute;
+    top:-9px;
+    left:10px;
+    background:var(--bg);
+    padding:0 6px;
+    font-family:var(--disp);
+    font-size:11px;
+    letter-spacing:1.5px;
+    color:var(--vu-amber);
+    text-transform:uppercase;
+  }
+
+  label.field{
+    display:block;
+    margin-bottom:12px;
+  }
+  label.field > span{
+    display:block;
+    font-size:11px;
+    color:var(--cream-dim);
+    margin-bottom:4px;
+    text-transform:uppercase;
+    letter-spacing:0.8px;
+  }
+  select, textarea, input[type=text]{
+    width:100%;
+    background:var(--panel-raised);
+    border:1px solid var(--line);
+    color:var(--cream);
+    font-family:var(--mono);
+    font-size:13px;
+    padding:8px 10px;
+    border-radius:2px;
+  }
+  select:focus, textarea:focus, input:focus{
+    outline:2px solid var(--copper);
+    outline-offset:1px;
+  }
+  select{
+    appearance:none;
+    background-image: linear-gradient(45deg, transparent 50%, var(--copper) 50%), linear-gradient(135deg, var(--copper) 50%, transparent 50%);
+    background-position: calc(100% - 16px) center, calc(100% - 11px) center;
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
+    cursor:pointer;
+  }
+
+  .tagtable{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:6px;
+  }
+  .tagtable th{
+    text-align:left;
+    font-family:var(--disp);
+    font-size:10px;
+    letter-spacing:1px;
+    text-transform:uppercase;
+    color:var(--vu-amber);
+    border-bottom:1px solid var(--line);
+    padding:6px 4px;
+  }
+  .tagtable td{
+    padding:6px 4px;
+    border-bottom:1px solid #2a2723;
+    vertical-align:top;
+    font-size:12.5px;
+  }
+  .tagtable tr:hover td{background:#242019;}
+  .tagchip{
+    color:var(--vu-green);
+    font-weight:600;
+    white-space:nowrap;
+  }
+  .effect{color:var(--cream-dim); font-size:12px;}
+  .catlabel{
+    font-family:var(--disp);
+    color:var(--copper);
+    text-transform:uppercase;
+    font-size:11px;
+    letter-spacing:1px;
+    margin:14px 0 4px;
+    border-left:3px solid var(--copper-dim);
+    padding-left:8px;
+  }
+  input[type=checkbox]{
+    accent-color: var(--copper);
+    width:15px;height:15px;
+    cursor:pointer;
+  }
+
+  .promptbox{
+    position:relative;
+  }
+  textarea{
+    resize:vertical;
+    min-height:64px;
+  }
+  #lyricsBox{min-height:280px; font-size:12.5px; line-height:1.6;}
+
+  .meterrow{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-top:6px;
+    font-size:11px;
+    color:var(--cream-dim);
+  }
+  .meter{
+    flex:1;
+    height:6px;
+    background:#2a2723;
+    margin:0 10px;
+    border-radius:3px;
+    overflow:hidden;
+  }
+  .meter-fill{
+    height:100%;
+    background:linear-gradient(90deg, var(--vu-green), var(--vu-amber) 80%, var(--danger) 100%);
+    width:0%;
+    transition:width .15s;
+  }
+  .meterlimit{color:var(--vu-amber); font-family:var(--mono);}
+  .over{color:var(--danger) !important; font-weight:700;}
+
+  .btnrow{
+    display:flex;
+    gap:8px;
+    margin-top:10px;
+    flex-wrap:wrap;
+  }
+  button{
+    font-family:var(--disp);
+    text-transform:uppercase;
+    letter-spacing:0.8px;
+    font-size:11px;
+    background:var(--panel-raised);
+    color:var(--cream);
+    border:1px solid var(--copper-dim);
+    padding:8px 14px;
+    border-radius:2px;
+    cursor:pointer;
+    transition:background .12s, color .12s;
+  }
+  button:hover{background:var(--copper-dim); color:var(--bg);}
+  button.primary{
+    background:var(--copper);
+    color:#1a1512;
+    border-color:var(--copper);
+    font-weight:700;
+  }
+  button.primary:hover{background:var(--vu-amber);}
+  button.ghost{background:transparent;}
+
+  .twocol{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:14px;
+  }
+  @media(min-width:1200px){
+    .twocol{grid-template-columns:1fr 1fr;}
+  }
+  .lyricsuggest{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    margin-top:8px;
+  }
+  .lyrtag{
+    display:flex;
+    align-items:center;
+    gap:5px;
+    background:var(--panel-raised);
+    border:1px solid var(--line);
+    padding:4px 8px;
+    border-radius:12px;
+    font-size:11px;
+    cursor:pointer;
+    user-select:none;
+  }
+  .lyrtag:hover{border-color:var(--copper);}
+  .lyrtag.active{border-color:var(--vu-green); color:var(--vu-green);}
+  .lyrtag .tip{color:var(--cream-dim); font-size:10px;}
+
+  .toast{
+    position:fixed;
+    bottom:18px;
+    left:50%;
+    transform:translateX(-50%) translateY(20px);
+    background:var(--copper);
+    color:#1a1512;
+    padding:8px 16px;
+    border-radius:3px;
+    font-family:var(--disp);
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+    opacity:0;
+    transition:opacity .2s, transform .2s;
+    pointer-events:none;
+    z-index:99;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  .hint{color:var(--cream-dim); font-size:11.5px; margin-top:2px;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Consola de <span>Prompts</span> · Suno</h1>
+  <div class="subtitle">Selecciona ritmo → variante → arma el Style Box con etiquetas → completa la Lyrics Box</div>
+</header>
+
+<div class="rack">
+
+  <!-- LEFT: SELECTORS -->
+  <div class="module" data-label="Selección">
+    <label class="field">
+      <span>1. Ritmo</span>
+      <select id="rhythmSelect"></select>
+    </label>
+    <label class="field">
+      <span>2. Variante / Subgénero</span>
+      <select id="variantSelect"></select>
+    </label>
+
+    <div class="catlabel">Estado del Style Box</div>
+    <div class="meterrow">
+      <span>Caracteres</span>
+      <div class="meter"><div class="meter-fill" id="meterFill"></div></div>
+      <span id="charCount" class="meterlimit">0/120</span>
+    </div>
+    <div class="hint">Suno trunca el prompt de estilo pasado este límite. Desmarca etiquetas si te pasas.</div>
+
+    <div class="btnrow">
+      <button class="primary" id="regenBtn">↺ Regenerar sugerido</button>
+      <button class="ghost" id="clearBtn">Limpiar selección</button>
+    </div>
+  </div>
+
+  <!-- RIGHT: RESULT + TAGS -->
+  <div class="module" data-label="Style Box">
+    <label class="field promptbox">
+      <span>Prompt de Estilo (editable — copiar en "Style of Music")</span>
+      <textarea id="styleBox" maxlength="400"></textarea>
+    </label>
+    <div class="btnrow">
+      <button id="copyStyleBtn">Copiar Style</button>
+    </div>
+
+    <div id="tagTables"></div>
+  </div>
+</div>
+
+<div class="twocol" style="margin-top:14px;">
+
+  <div class="module" data-label="Sugerencias para Lyrics">
+    <div class="hint" style="margin-bottom:6px;">Metatags recomendados para este ritmo. Clic para insertarlos en el cuadro de letra.</div>
+    <div class="lyricsuggest" id="lyricSuggestBox"></div>
+  </div>
+
+  <div class="module" data-label="Lyrics Box">
+    <label class="field">
+      <span>Letra + Metatags (editable — copiar en "Lyrics")</span>
+      <textarea id="lyricsBox"></textarea>
+    </label>
+    <div class="btnrow">
+      <button id="copyLyricsBtn">Copiar Lyrics</button>
+      <button class="primary" id="downloadBtn">⬇ Descargar ambos (.txt)</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================= DATOS ============================= */
+const DATA = {
+"Rock and Roll": {
+  variants: ["Classic Rock","Rockabilly","Garage Rock","Blues Rock","Southern Rock","Punk Rock","Glam Rock","Hard Rock","Surf Rock"],
+  tags: {
+    "Instrumentación": [
+      ["twangy electric guitar","Guitarra brillante y percusiva, sonido clásico de los 50-60"],
+      ["slap bass","Bajo acústico tocado a golpes, típico del rockabilly"],
+      ["Hammond organ","Textura de órgano cálida, sube el groove tipo blues-rock"],
+      ["saxophone riff","Frases de saxo que refuerzan energía festiva"],
+      ["overdriven guitar","Guitarra con distorsión moderada, más peso y agresividad"],
+      ["honky-tonk piano","Piano percusivo tipo bar, ideal para boogie"]
+    ],
+    "Tempo/Ritmo": [
+      ["120 BPM","Tempo medio-rápido, bailable clásico"],
+      ["shuffle rhythm","Swing en corcheas, base del rock and roll original"],
+      ["12-bar blues progression","Estructura armónica típica, da identidad de blues-rock"],
+      ["boogie-woogie rhythm","Patrón de piano/bajo insistente y rodante"]
+    ],
+    "Producción": [
+      ["tape saturation","Calidez analógica, simula grabación en cinta vintage"],
+      ["slapback echo","Eco corto repetido, sonido icónico Sun Records"],
+      ["mono mix aesthetic","Mezcla centrada, look sonoro retro sin estéreo amplio"],
+      ["raw garage production","Sonido crudo, poco procesado, sensación en vivo"],
+      ["live band recording","Simula banda tocando junta en sala, ambiente natural"]
+    ],
+    "Vocal": [
+      ["gritty male vocals","Voz masculina áspera, con carácter rocoso"],
+      ["raspy shouting vocals","Grito rasgado, alta energía y urgencia"],
+      ["doo-wop harmonies","Coros armónicos vintage estilo grupos vocales 50s"],
+      ["rockabilly hiccup vocal style","Quiebres vocales característicos (estilo Elvis)"],
+      ["call and response vocals","Diálogo entre voz líder y coro"]
+    ]
+  },
+  lyrics: [
+    ["[Call and Response]","Crea diálogo entre solista y coro, muy usado en rock and roll"],
+    ["[Belting]","Voz proyectada con fuerza en el estribillo"],
+    ["[Guitar Solo]","Sección instrumental de guitarra destacada"],
+    ["[Full Band Entry]","Entrada de toda la banda tras una intro reducida"],
+    ["[Handclaps]","Palmas marcando el pulso, refuerza el groove"],
+    ["[Spoken Word]","Frase hablada antes de un estribillo, efecto dramático"],
+    ["[Tempo Change]","Cambio de velocidad para dar dinamismo"],
+    ["[Fade Out]","Cierre progresivo, clásico de grabaciones vintage"]
+  ]
+},
+
+"Pop": {
+  variants: ["Pop Moderno","Synth-Pop","Dance-Pop","Pop Rock","Indie Pop","Bedroom Pop","Power Pop"],
+  tags: {
+    "Instrumentación": [
+      ["punchy synth bass","Bajo sintetizado percusivo, moderno y radial"],
+      ["layered synth pads","Capas de sintetizador que dan amplitud y brillo"],
+      ["acoustic guitar strums","Rasgueo acústico, sensación orgánica y cercana"],
+      ["four-on-the-floor kick","Bombo en cada tiempo, empuja el baile"],
+      ["plucky arpeggios","Arpegios sintéticos brillantes, gancho instrumental"]
+    ],
+    "Tempo/Ritmo": [
+      ["100 BPM","Tempo medio, ideal para pop melódico"],
+      ["120 BPM","Tempo bailable estándar de radio"],
+      ["half-time chorus feel","El estribillo se siente a mitad de velocidad, más impacto"],
+      ["syncopated groove","Ritmo con acentos desplazados, más interesante rítmicamente"]
+    ],
+    "Producción": [
+      ["radio-ready mix","Mezcla pulida y competitiva en volumen, lista para streaming"],
+      ["sidechain compression","Bombeo rítmico típico del pop-dance moderno"],
+      ["bright vocal chain","Cadena de efectos que resalta y aclara la voz principal"],
+      ["wide stereo synths","Sintetizadores anchos en el estéreo, sensación de espacio"],
+      ["gated snare","Caja con puerta de compuerta, corte seco y moderno"]
+    ],
+    "Vocal": [
+      ["catchy melodic vocals","Melodía vocal pegajosa y fácil de recordar"],
+      ["airy female vocals","Voz femenina ligera y aireada"],
+      ["layered harmonies","Múltiples capas de armonía vocal"],
+      ["autotuned hook","Voz con autotune audible en el gancho, estética pop actual"],
+      ["whispered pre-chorus","Voz susurrada antes del estribillo, genera tensión"]
+    ]
+  },
+  lyrics: [
+    ["[Pre-Chorus]","Sección de transición que construye tensión hacia el coro"],
+    ["[Post-Chorus]","Frase-gancho breve tras el estribillo, refuerza el hook"],
+    ["[Belting]","Voz potente en el clímax del estribillo"],
+    ["[Whisper]","Voz susurrada para contraste emocional"],
+    ["[Harmonies]","Armonías vocales que enriquecen el estribillo"],
+    ["[Bass Drop]","Caída de bajo que marca el inicio del coro/drop"],
+    ["[Ad-libs]","Interjecciones vocales libres, dan personalidad"],
+    ["[Outro]","Cierre melódico, suele repetir el gancho principal"]
+  ]
+},
+
+"Hip-Hop / Trap": {
+  variants: ["Trap Moderno","Boom Bap","Drill","Trap Latino","Cloud Rap","Old School Hip-Hop","Lo-fi Hip-Hop"],
+  tags: {
+    "Instrumentación": [
+      ["808 sub bass","Bajo sintético profundo, columna vertebral del trap"],
+      ["rolling hi-hats","Hi-hats rápidos con rolls, textura característica del trap"],
+      ["dark piano loop","Loop de piano melancólico, típico de boom bap/drill"],
+      ["vinyl sample chop","Muestra de vinilo cortada y recompuesta, sabor old-school"],
+      ["distorted 808 bass","808 saturado, más agresivo y presente"]
+    ],
+    "Tempo/Ritmo": [
+      ["140 BPM half-time","Sensación lenta con hi-hats rápidos, estándar del trap"],
+      ["boom bap 90 BPM","Tempo clásico de golpe seco, hip-hop noventero"],
+      ["triplet hi-hat flow","Patrón de hi-hat en tresillos, flow característico trap"],
+      ["swung groove","Ritmo con swing, sensación relajada y orgánica"]
+    ],
+    "Producción": [
+      ["gritty lo-fi texture","Textura sucia y cálida, estética underground"],
+      ["hard-hitting drums","Batería con impacto fuerte, mezcla agresiva"],
+      ["reverb-drenched vocals","Voz bañada en reverb, sensación atmosférica"],
+      ["tape hiss","Ruido de cinta de fondo, look vintage/lo-fi"],
+      ["punchy sub-bass mix","Mezcla con graves controlados pero potentes"]
+    ],
+    "Vocal": [
+      ["auto-tuned melodic rap","Rap melódico con autotune, estética trap moderna"],
+      ["aggressive rap delivery","Flow agresivo y directo"],
+      ["ad-lib heavy vocals","Muchos ad-libs de fondo, típico del trap"],
+      ["laid-back flow","Flow relajado, cadencia sin prisa"],
+      ["chopped vocal sample","Sample vocal cortado y reutilizado como gancho"]
+    ]
+  },
+  lyrics: [
+    ["[Ad-libs]","Interjecciones características del trap (yeah, skrrt, etc.)"],
+    ["[Hook]","Gancho repetitivo y memorable"],
+    ["[Verse 1]","Primer verso narrativo"],
+    ["[Beat Switch]","Cambio de instrumental a mitad de canción"],
+    ["[Spoken Word]","Intro hablada antes de entrar al beat"],
+    ["[Call and Response]","Interacción entre voz principal y coro/ad-libs"],
+    ["[Bass Drop]","Entrada del 808 con fuerza"],
+    ["[Outro]","Cierre, a veces con voz distorsionada o filtrada"]
+  ]
+},
+
+"Reggaeton": {
+  variants: ["Reggaeton Clásico","Reggaeton Romántico","Reggaeton Perreo","Dembow","Reggaeton Pop","Afro-Reggaeton"],
+  tags: {
+    "Instrumentación": [
+      ["dembow riddim","Patrón rítmico base del reggaetón, obligatorio"],
+      ["punchy 808 bass","Bajo grave y percusivo, empuje del perreo"],
+      ["reggaeton horns stab","Golpes de metales cortos, acento festivo"],
+      ["marimbita melody","Melodía de marimba sintética, gancho típico"],
+      ["afrobeat percussion","Percusión afro que añade groove tropical"]
+    ],
+    "Tempo/Ritmo": [
+      ["90 BPM dembow","Tempo estándar del género"],
+      ["94 BPM","Ligera variante más rápida, común en éxitos recientes"],
+      ["syncopated dembow clap","Palmas sincopadas sobre el patrón dembow"]
+    ],
+    "Producción": [
+      ["club-ready low end","Graves diseñados para sonar fuerte en discotecas"],
+      ["sidechain pump","Bombeo rítmico entre bajo y percusión"],
+      ["bright vocal chain","Voz principal clara y presente sobre la mezcla"],
+      ["tropical synth stabs","Golpes de sintetizador con color tropical"]
+    ],
+    "Vocal": [
+      ["smooth melodic reggaeton vocals","Voz melódica suave, típica del romántico"],
+      ["raspy urban vocals","Voz urbana con textura áspera"],
+      ["auto-tuned hook","Gancho con autotune, estética pop-urbana"],
+      ["call and response ad-libs","Ad-libs que responden a la frase principal"],
+      ["whispered verses","Versos susurrados, contraste sensual"]
+    ]
+  },
+  lyrics: [
+    ["[Perreo Break]","Sección instrumental pensada para el baile pegado"],
+    ["[Ad-libs]","Interjecciones típicas (dale, ey, oe)"],
+    ["[Pre-Chorus]","Construcción de tensión antes del coro"],
+    ["[Hook]","Frase gancho repetitiva y bailable"],
+    ["[Call and Response]","Interacción con coristas o ad-libs"],
+    ["[Bass Drop]","Entrada fuerte del 808 tras un silencio"],
+    ["[Whisper]","Susurro sensual en versos"],
+    ["[Outro]","Cierre con repetición del gancho"]
+  ]
+},
+
+"Cumbia": {
+  variants: ["Cumbia Colombiana Tradicional","Cumbia Sonidera","Cumbia Villera","Cumbia Pop","Cumbia Andina"],
+  tags: {
+    "Instrumentación": [
+      ["accordion melody","Melodía de acordeón, columna vertebral de la cumbia"],
+      ["guacharaca scraper","Instrumento de raspado, marca el pulso tradicional"],
+      ["güira percussion","Percusión metálica que aporta brillo rítmico"],
+      ["synth cumbia lead","Sintetizador líder estilo sonidero, sonido callejero"],
+      ["congas and tambora","Percusión tropical de base, groove cumbiero"]
+    ],
+    "Tempo/Ritmo": [
+      ["95 BPM cumbia groove","Tempo típico bailable"],
+      ["straight cumbia clave","Patrón rítmico clásico de dos tiempos"],
+      ["sonidero swing","Swing característico de la cumbia sonidera mexicana"]
+    ],
+    "Producción": [
+      ["lo-fi sonidero echo","Eco crudo típico de los sonideros callejeros"],
+      ["warm analog mix","Mezcla cálida, sensación vintage tropical"],
+      ["bright accordion presence","Acordeón destacado y nítido en la mezcla"]
+    ],
+    "Vocal": [
+      ["nasal folk vocals","Voz nasal, estilo tradicional colombiano"],
+      ["romantic melodic vocals","Voz melódica suave, cumbia romántica/pop"],
+      ["shouted sonidero ad-libs","Gritos y frases típicas de locutor sonidero"],
+      ["call and response chorus","Coro que responde a la voz líder"]
+    ]
+  },
+  lyrics: [
+    ["[Call and Response]","Diálogo entre solista y coro, muy típico"],
+    ["[Instrumental Break]","Sección de acordeón o sintetizador destacada"],
+    ["[Shout Outs]","Saludos hablados típicos de la cumbia sonidera"],
+    ["[Chorus]","Estribillo bailable y repetitivo"],
+    ["[Spoken Word]","Frase hablada de presentación o dedicatoria"],
+    ["[Outro]","Cierre con repetición instrumental"]
+  ]
+},
+
+"Salsa": {
+  variants: ["Salsa Dura","Salsa Romántica","Salsa Choke","Timba","Salsa Brava"],
+  tags: {
+    "Instrumentación": [
+      ["horn section stabs","Sección de metales potente, sello de la salsa"],
+      ["montuno piano","Patrón de piano repetitivo, corazón armónico del género"],
+      ["congas and timbales","Percusión afrocubana esencial"],
+      ["walking bass tumbao","Línea de bajo sincopada característica"],
+      ["trombone riff","Riff de trombón, aporta fuerza y color"]
+    ],
+    "Tempo/Ritmo": [
+      ["clave rhythm 2-3","Patrón rítmico fundamental de la salsa"],
+      ["180 BPM uptempo","Tempo rápido para salsa dura/brava"],
+      ["romantic ballad tempo","Tempo más lento para salsa romántica"]
+    ],
+    "Producción": [
+      ["live horn section recording","Sonido de metales grabados en vivo, sensación de banda real"],
+      ["warm analog percussion","Percusión con calidez analógica"],
+      ["bright brass mix","Metales brillantes y protagonistas en la mezcla"]
+    ],
+    "Vocal": [
+      ["powerful sonero vocals","Voz de sonero potente, típica del género"],
+      ["romantic smooth vocals","Voz suave y melódica para salsa romántica"],
+      ["call and response coro","Coro responde a las improvisaciones del sonero"],
+      ["improvised ad-libs (soneo)","Improvisación vocal libre sobre el montuno"]
+    ]
+  },
+  lyrics: [
+    ["[Coro]","Estribillo repetitivo que dialoga con el sonero"],
+    ["[Soneo]","Improvisación vocal libre, típica del clímax salsero"],
+    ["[Instrumental Break]","Sección de metales o piano destacada"],
+    ["[Call and Response]","Interacción constante voz-coro"],
+    ["[Mambo Section]","Sección instrumental de metales muy energética"],
+    ["[Outro]","Cierre con repetición del coro"]
+  ]
+},
+
+"Bachata": {
+  variants: ["Bachata Tradicional","Bachata Urbana","Bachata Sensual","Bachata Pop"],
+  tags: {
+    "Instrumentación": [
+      ["requinto guitar lead","Guitarra líder con arpegios característicos"],
+      ["bongo percussion","Percusión de bongó, base rítmica tradicional"],
+      ["güira metallic scrape","Raspado metálico, marca el pulso bachatero"],
+      ["romantic guitar arpeggios","Arpegios melódicos y emotivos"],
+      ["urban bachata synth bass","Bajo sintetizado, variante urbana moderna"]
+    ],
+    "Tempo/Ritmo": [
+      ["120 BPM bachata groove","Tempo estándar bailable"],
+      ["syncopated bongo pattern","Patrón sincopado típico del género"]
+    ],
+    "Producción": [
+      ["warm romantic mix","Mezcla cálida enfocada en la emoción"],
+      ["modern urban production","Producción con elementos urbanos/pop actuales"],
+      ["intimate close-mic vocals","Voz grabada cerca del micrófono, sensación íntima"]
+    ],
+    "Vocal": [
+      ["emotional romantic vocals","Voz melódica y emotiva, centro del género"],
+      ["breathy sensual vocals","Voz suave y sensual con aire"],
+      ["urban melodic rap-sing","Mezcla de canto y rap melódico (bachata urbana)"],
+      ["harmonized chorus","Coro armonizado en el estribillo"]
+    ]
+  },
+  lyrics: [
+    ["[Chorus]","Estribillo emotivo y memorable"],
+    ["[Guitar Solo]","Solo de requinto, momento instrumental clave"],
+    ["[Spoken Word]","Frase hablada romántica antes de un verso"],
+    ["[Whisper]","Susurro íntimo en un verso sensual"],
+    ["[Harmonies]","Armonías vocales en el coro"],
+    ["[Outro]","Cierre melódico, suele repetir la frase principal"]
+  ]
+},
+
+"Balada / Pop Romántico": {
+  variants: ["Balada Pop", "Balada Rock", "Balada Acústica", "Power Ballad"],
+  tags: {
+    "Instrumentación": [
+      ["grand piano","Piano de cola, base emocional de la balada"],
+      ["string orchestra swell","Cuerdas que crecen dramáticamente en el clímax"],
+      ["fingerpicked acoustic guitar","Guitarra acústica punteada, intimidad"],
+      ["soft pad synth","Colchón sintetizado suave de fondo"],
+      ["electric guitar power chords","Acordes de poder, propio de la power ballad"]
+    ],
+    "Tempo/Ritmo": [
+      ["70 BPM ballad tempo","Tempo lento, propicio para la emoción"],
+      ["rubato feel","Tiempo libre y expresivo, sin metrónomo estricto"],
+      ["building tempo to climax","El tempo/energía crece hacia el final"]
+    ],
+    "Producción": [
+      ["cinematic reverb","Reverb amplio y envolvente, sensación de sala grande"],
+      ["dynamic build production","Producción que crece progresivamente en capas"],
+      ["intimate vocal-forward mix","Mezcla que prioriza la voz por sobre todo"]
+    ],
+    "Vocal": [
+      ["emotional belting climax","Voz potente y desgarrada en el clímax"],
+      ["tender soft vocals","Voz suave y delicada en las estrofas"],
+      ["layered choir harmonies","Coro de armonías que refuerza el clímax"],
+      ["breathy intimate verses","Versos con voz cercana y aireada"]
+    ]
+  },
+  lyrics: [
+    ["[Verse 1]","Estrofa inicial, tono íntimo"],
+    ["[Pre-Chorus]","Construcción emocional antes del estribillo"],
+    ["[Belting]","Voz potente en el clímax"],
+    ["[Key Change]","Cambio de tonalidad para elevar el clímax final"],
+    ["[Acoustic Breakdown]","Reducción a instrumentación mínima, momento íntimo"],
+    ["[Full Band Entry]","Entrada de toda la banda tras la reducción"],
+    ["[Fade Out]","Cierre progresivo y emotivo"]
+  ]
+},
+
+"Electrónica (House/Techno/EDM)": {
+  variants: ["Progressive House","Techno","Future Bass","Deep House","Trance","Big Room EDM","Drum and Bass"],
+  tags: {
+    "Instrumentación": [
+      ["four-on-the-floor kick","Bombo constante, base de casi todo el género"],
+      ["acid 303 line","Línea de bajo ácida y filtrada, sello del acid house"],
+      ["supersaw lead","Sintetizador líder ancho y potente, típico de EDM"],
+      ["rolling sub bass","Bajo grave envolvente y continuo"],
+      ["arpeggiated pluck synth","Arpegio sintético percusivo y brillante"]
+    ],
+    "Tempo/Ritmo": [
+      ["128 BPM house groove","Tempo estándar de house"],
+      ["140 BPM techno drive","Tempo más acelerado y hipnótico"],
+      ["174 BPM drum and bass","Tempo muy rápido con breakbeats"],
+      ["half-time future bass feel","Sensación de tiempo reducido a la mitad"]
+    ],
+    "Producción": [
+      ["sidechain pump","Bombeo característico entre kick y resto de elementos"],
+      ["filtered build-up","Filtro que sube en tensión antes del drop"],
+      ["massive drop impact","Caída de energía masiva tras el build-up"],
+      ["wide stereo synths","Sintetizadores amplios en el campo estéreo"],
+      ["white noise riser","Ruido ascendente que anuncia el drop"]
+    ],
+    "Vocal": [
+      ["chopped vocal chops","Fragmentos vocales cortados y repetidos como textura"],
+      ["ethereal female vocals","Voz femenina etérea, flotante sobre la mezcla"],
+      ["vocoder-processed vocals","Voz procesada con vocoder, textura robótica"],
+      ["anthemic shout vocals","Voz coreable tipo himno de festival"]
+    ]
+  },
+  lyrics: [
+    ["[Build-Up]","Sección de tensión creciente antes del drop"],
+    ["[Bass Drop]","Momento climático de máxima energía"],
+    ["[Instrumental Break]","Pasaje sin voz, protagonismo del synth"],
+    ["[Vocal Chop Hook]","Gancho hecho de fragmentos vocales"],
+    ["[Breakdown]","Reducción de energía a mitad de la canción"],
+    ["[Full Band Entry]","Reingreso completo de todos los elementos"],
+    ["[Outro]","Salida progresiva, suele filtrarse hasta el silencio"]
+  ]
+},
+
+"Jazz": {
+  variants: ["Jazz Clásico (Swing)","Bebop","Cool Jazz","Jazz Fusion","Nu-Jazz","Smooth Jazz"],
+  tags: {
+    "Instrumentación": [
+      ["upright bass walking line","Línea de bajo caminante, base armónica del jazz"],
+      ["brushed drum kit","Batería tocada con escobillas, textura suave"],
+      ["muted trumpet","Trompeta con sordina, color íntimo y cálido"],
+      ["extended jazz chords","Acordes extendidos (7mas, 9nas), color armónico rico"],
+      ["saxophone improvisation","Improvisación de saxofón, protagonismo solista"]
+    ],
+    "Tempo/Ritmo": [
+      ["swing feel","Ritmo con swing, base rítmica esencial del jazz"],
+      ["medium swing 120 BPM","Tempo medio típico de standard de jazz"],
+      ["odd time signature","Compás irregular, propio del fusion/nu-jazz"]
+    ],
+    "Producción": [
+      ["warm room ambience","Ambiente de sala cálido, sensación de club en vivo"],
+      ["natural dynamic mix","Mezcla con dinámica natural, poco comprimida"],
+      ["vintage ribbon mic tone","Tono cálido de micrófono de cinta vintage"]
+    ],
+    "Vocal": [
+      ["smoky jazz vocals","Voz cálida y ahumada, clásica del género"],
+      ["scat singing","Improvisación vocal con sílabas sin sentido, técnica jazzística"],
+      ["breathy crooner vocals","Voz suave estilo crooner clásico"]
+    ]
+  },
+  lyrics: [
+    ["[Scat Singing]","Improvisación vocal con sílabas, muy característico"],
+    ["[Instrumental Break]","Solo instrumental destacado (sax, trompeta, piano)"],
+    ["[Melodic Vocals]","Línea vocal fluida y expresiva"],
+    ["[Call and Response]","Diálogo entre voz e instrumento solista"],
+    ["[Outro]","Cierre suave, a menudo con ritardando"]
+  ]
+},
+
+"Blues": {
+  variants: ["Delta Blues","Chicago Blues","Electric Blues","Blues Rock"],
+  tags: {
+    "Instrumentación": [
+      ["slide guitar","Guitarra con slide, sonido lastimero característico"],
+      ["harmonica lead","Armónica solista, muy típica del blues"],
+      ["walking bass line","Línea de bajo caminante que sostiene el groove"],
+      ["distorted blues guitar","Guitarra con distorsión ligera, blues eléctrico"],
+      ["shuffle drum groove","Batería con patrón shuffle, base rítmica del género"]
+    ],
+    "Tempo/Ritmo": [
+      ["12-bar blues form","Estructura armónica clásica de 12 compases"],
+      ["slow blues 60 BPM","Tempo lento y sentido"],
+      ["shuffle rhythm","Swing en corcheas, groove característico"]
+    ],
+    "Producción": [
+      ["raw analog recording","Grabación cruda, sensación en vivo sin pulir"],
+      ["tape saturation","Calidez y compresión natural tipo cinta"],
+      ["room reverb ambience","Reverberación natural de sala, sensación íntima"]
+    ],
+    "Vocal": [
+      ["raspy soulful vocals","Voz áspera y llena de sentimiento"],
+      ["call and response vocals","Diálogo entre voz e instrumento (guitarra/armónica)"],
+      ["gritty blues shouting","Grito rasgado, expresión cruda del dolor/pasión"]
+    ]
+  },
+  lyrics: [
+    ["[Call and Response]","Diálogo característico entre voz e instrumento"],
+    ["[Guitar Solo]","Solo de guitarra, momento expresivo central"],
+    ["[Spoken Word]","Frase hablada introductoria, muy usada en blues"],
+    ["[Acoustic Breakdown]","Reducción a lo esencial, guitarra y voz"],
+    ["[Outro]","Cierre lento, a menudo con fade"]
+  ]
+},
+
+"Metal": {
+  variants: ["Heavy Metal","Thrash Metal","Death Metal","Metalcore","Power Metal","Nu Metal","Symphonic Metal"],
+  tags: {
+    "Instrumentación": [
+      ["palm-muted rhythm guitar","Guitarra con palm mute, base percusiva pesada"],
+      ["double bass drum pedal","Doble bombo veloz, empuje característico del metal"],
+      ["shredding guitar solo","Solo de guitarra técnico y veloz"],
+      ["down-tuned guitar riff","Riff en afinación baja, más peso y oscuridad"],
+      ["symphonic orchestra layer","Capa orquestal épica, propia del symphonic metal"]
+    ],
+    "Tempo/Ritmo": [
+      ["180 BPM thrash tempo","Tempo muy rápido y agresivo"],
+      ["blast beat drumming","Patrón de batería extremadamente veloz"],
+      ["half-time breakdown groove","Sección lenta y pesada, propia del metalcore"]
+    ],
+    "Producción": [
+      ["heavily distorted guitar wall","Muro de guitarras saturadas, sonido masivo"],
+      ["aggressive compressed drums","Batería comprimida y contundente"],
+      ["dark atmospheric production","Producción oscura y atmosférica"],
+      ["scooped mid guitar tone","Tono de guitarra con medios recortados, más pesado"]
+    ],
+    "Vocal": [
+      ["harsh growled vocals","Voz gutural agresiva, típica del death metal"],
+      ["soaring power metal vocals","Voz aguda y potente, estilo operístico-metal"],
+      ["screamed vocals","Grito agudo y desgarrado"],
+      ["clean melodic vocals","Voz limpia melódica, contraste en metalcore"]
+    ]
+  },
+  lyrics: [
+    ["[Breakdown]","Sección lenta y pesada de alto impacto"],
+    ["[Guitar Solo]","Solo técnico, momento de virtuosismo"],
+    ["[Screamed Vocals]","Sección gritada de alta intensidad"],
+    ["[Clean Vocals]","Contraste melódico y limpio"],
+    ["[Bridge]","Sección de transición antes del clímax final"],
+    ["[Full Band Entry]","Entrada de toda la banda con máxima potencia"]
+  ]
+},
+
+"Bossa Nova": {
+  variants: ["Bossa Nova Clásica","Bossa Jazz","Bossa Pop"],
+  tags: {
+    "Instrumentación": [
+      ["nylon string guitar","Guitarra de cuerdas de nylon, sonido suave y cálido"],
+      ["soft brush drums","Batería con escobillas, textura delicada"],
+      ["light double bass","Bajo acústico suave, discreto y elegante"],
+      ["flute melody line","Melodía de flauta, aporta ligereza"],
+      ["extended jazz chords","Acordes con color jazzístico, característicos del género"]
+    ],
+    "Tempo/Ritmo": [
+      ["bossa clave rhythm","Patrón rítmico sincopado característico"],
+      ["relaxed 100 BPM groove","Tempo relajado, sensación playera"]
+    ],
+    "Producción": [
+      ["warm intimate mix","Mezcla cálida e íntima, poco procesada"],
+      ["natural room ambience","Ambiente natural de sala, sin artificios"]
+    ],
+    "Vocal": [
+      ["breathy soft vocals","Voz suave y aireada, casi susurrada"],
+      ["gentle bilingual phrasing","Fraseo suave, a menudo alternando idiomas"],
+      ["intimate close vocals","Voz cercana al micrófono, sensación íntima"]
+    ]
+  },
+  lyrics: [
+    ["[Whisper]","Voz susurrada, muy propia del estilo"],
+    ["[Melodic Vocals]","Línea vocal suave y fluida"],
+    ["[Instrumental Break]","Pasaje instrumental relajado (guitarra o flauta)"],
+    ["[Outro]","Cierre suave y natural, sin dramatismo"]
+  ]
+},
+
+"Bolero": {
+  variants: ["Bolero Tradicional","Bolero Filin","Bolero Ranchero","Bolero Moruno","Bolero Pop"],
+  tags: {
+    "Instrumentación": [
+      ["nylon string guitar trio","Guitarras de nylon en trío, base clásica del bolero"],
+      ["romantic string section","Cuerdas orquestales que refuerzan el dramatismo"],
+      ["bongo and claves","Percusión suave que marca el pulso característico"],
+      ["grand piano chords","Acordes de piano románticos y espaciados"],
+      ["muted trumpet countermelody","Contramelodía de trompeta con sordina, color íntimo"]
+    ],
+    "Tempo/Ritmo": [
+      ["bolero clave rhythm","Patrón rítmico lento y sincopado propio del género"],
+      ["slow 65 BPM tempo","Tempo pausado, ideal para la carga emocional"],
+      ["rubato phrasing","Fraseo con libertad de tiempo, muy expresivo"]
+    ],
+    "Producción": [
+      ["warm intimate mix","Mezcla cálida centrada en la voz y la emoción"],
+      ["vintage tube warmth","Calidez de válvulas, sonido de grabación clásica"],
+      ["lush string reverb","Reverberación amplia sobre las cuerdas, sensación de sala"]
+    ],
+    "Vocal": [
+      ["velvety romantic vocals","Voz aterciopelada, muy melódica y sentida"],
+      ["trio harmonies","Armonías vocales a tres voces, sello del bolero clásico"],
+      ["emotional vibrato vocals","Voz con vibrato marcado en los finales de frase"],
+      ["spoken romantic intro","Introducción hablada y romántica antes de cantar"]
+    ]
+  },
+  lyrics: [
+    ["[Spoken Word]","Frase hablada romántica, muy típica como introducción"],
+    ["[Trio Harmonies]","Armonías a tres voces en el estribillo"],
+    ["[Belting]","Voz potente en el clímax emocional"],
+    ["[Instrumental Break]","Pasaje de guitarra o cuerdas destacado"],
+    ["[Rubato Ending]","Final con libertad de tempo, muy dramático"],
+    ["[Outro]","Cierre suave, a menudo con la voz apagándose"]
+  ]
+},
+
+"Tango": {
+  variants: ["Tango Tradicional","Tango Nuevo (Piazzolla)","Tango Canción","Milonga","Vals Criollo"],
+  tags: {
+    "Instrumentación": [
+      ["bandoneon lead","Bandoneón protagonista, instrumento identitario del tango"],
+      ["staccato violin section","Violines en staccato, marcan tensión rítmica"],
+      ["walking double bass","Bajo caminante que sostiene el pulso"],
+      ["dramatic piano ostinato","Ostinato de piano insistente y dramático"],
+      ["pizzicato strings","Cuerdas pizzicato, aportan color percusivo"]
+    ],
+    "Tempo/Ritmo": [
+      ["tango 2/4 marcato","Compás marcado en dos, base rítmica tradicional"],
+      ["milonga syncopated groove","Ritmo sincopado y más ágil que el tango clásico"],
+      ["rubato dramatic pauses","Pausas dramáticas con libertad de tiempo"]
+    ],
+    "Producción": [
+      ["cinematic chamber ambience","Ambiente de cámara, sensación teatral e íntima"],
+      ["vintage orchestral warmth","Calidez orquestal de grabación clásica"],
+      ["dynamic contrast production","Producción con fuertes contrastes de intensidad"]
+    ],
+    "Vocal": [
+      ["dramatic baritone vocals","Voz de barítono, grave y teatral"],
+      ["passionate rioplatense phrasing","Fraseo apasionado con acento rioplatense"],
+      ["spoken dramatic recitation","Recitado hablado y dramático entre versos"],
+      ["tremulous emotional vocals","Voz trémula, cargada de emoción"]
+    ]
+  },
+  lyrics: [
+    ["[Spoken Word]","Recitado dramático, muy usado en tango-canción"],
+    ["[Instrumental Break]","Pasaje de bandoneón o violín destacado"],
+    ["[Belting]","Voz potente en el clímax dramático"],
+    ["[Tempo Change]","Cambio abrupto de tempo, típico del dramatismo tanguero"],
+    ["[Bridge]","Sección de transición con mayor tensión armónica"],
+    ["[Outro]","Cierre abrupto o con acorde final marcado"]
+  ]
+},
+
+"Twist": {
+  variants: ["Twist Clásico (50s/60s)","Twist Rock","Twist Latino"],
+  tags: {
+    "Instrumentación": [
+      ["saxophone riff","Riff de saxo pegajoso, muy típico del twist"],
+      ["twangy electric guitar","Guitarra brillante y percusiva de la época"],
+      ["upright bass slap","Bajo acústico a golpes, empuje bailable"],
+      ["honky-tonk piano","Piano percusivo que refuerza el groove"],
+      ["handclap percussion","Palmas marcando el pulso, esenciales para bailar"]
+    ],
+    "Tempo/Ritmo": [
+      ["twist 4/4 uptempo","Tempo rápido y directo, hecho para bailar"],
+      ["shuffle rhythm","Swing en corcheas, base rítmica de la época"],
+      ["130 BPM dance groove","Tempo estándar del twist bailable"]
+    ],
+    "Producción": [
+      ["vintage tape saturation","Calidez analógica típica de grabaciones de los 60"],
+      ["mono mix aesthetic","Mezcla centrada, sonido de época"],
+      ["live band energy","Sensación de banda tocando en vivo, muy espontánea"]
+    ],
+    "Vocal": [
+      ["energetic call vocals","Voz enérgica que invita a bailar"],
+      ["doo-wop backing harmonies","Coros armónicos vintage de fondo"],
+      ["shouted dance cues","Frases gritadas indicando pasos de baile"]
+    ]
+  },
+  lyrics: [
+    ["[Call and Response]","Diálogo entre voz líder y coro, muy usado para animar el baile"],
+    ["[Shout Outs]","Frases gritadas invitando a bailar"],
+    ["[Instrumental Break]","Pasaje de saxo o guitarra destacado"],
+    ["[Handclaps]","Palmas marcando el pulso bailable"],
+    ["[Outro]","Cierre enérgico, a menudo con la banda en vivo"]
+  ]
+},
+
+"Folclore Chileno (Cueca / Tonada)": {
+  variants: ["Cueca Chilena Tradicional","Cueca Brava (Urbana/Chora)","Cueca Nortina","Tonada Chilena","Tonada de Cuyo/Campo"],
+  tags: {
+    "Instrumentación": [
+      ["guitarra traspuesta","Guitarra con afinaciones tradicionales chilenas, color folclórico auténtico"],
+      ["harp accompaniment","Arpa criolla como acompañamiento armónico tradicional"],
+      ["accordion melody","Acordeón melódico, muy presente en la tonada"],
+      ["pandero (tambourine) rhythm","Pandero marcando el pulso, esencial en la cueca"],
+      ["cajón percussion","Cajón peruano/chileno, refuerzo percusivo popular"]
+    ],
+    "Tempo/Ritmo": [
+      ["cueca 6/8 rhythm","Compás característico de la cueca, base del baile de pañuelo"],
+      ["tonada 3/4 waltz feel","Compás de vals lento, propio de la tonada"],
+      ["upbeat cueca brava tempo","Tempo más rápido y festivo, cueca urbana"]
+    ],
+    "Producción": [
+      ["warm acoustic folk mix","Mezcla cálida y natural, énfasis en instrumentos acústicos"],
+      ["live peña recording feel","Sensación de grabación en vivo tipo peña folclórica"],
+      ["rustic room ambience","Ambiente natural y rústico, poco procesado"]
+    ],
+    "Vocal": [
+      ["duet folk harmonies","Dúo vocal armonizado, muy típico de la tonada"],
+      ["shouted cueca ad-libs (¡Y ahí va!)","Interjecciones tradicionales de ánimo durante el baile"],
+      ["nasal rural vocals","Voz con timbre nasal, estilo campesino tradicional"],
+      ["heartfelt storytelling vocals","Voz narrativa y sentida, propia de la tonada"]
+    ]
+  },
+  lyrics: [
+    ["[Call and Response]","Diálogo vocal, usado en cuecas de contrapunto"],
+    ["[Shout Outs]","Interjecciones típicas de ánimo (¡eso es!, ¡y ahí va!)"],
+    ["[Instrumental Break]","Pasaje de guitarra o acordeón destacado"],
+    ["[Duet Harmonies]","Armonías a dos voces, muy propias de la tonada"],
+    ["[Handclaps]","Palmas marcando el compás durante el baile"],
+    ["[Outro]","Cierre festivo o con desenlace narrativo en la tonada"]
+  ]
+},
+
+"Ranchera / Mariachi": {
+  variants: ["Ranchera Tradicional","Mariachi Moderno","Ranchera Pop"],
+  tags: {
+    "Instrumentación": [
+      ["mariachi trumpet section","Sección de trompetas, sello distintivo del mariachi"],
+      ["vihuela strumming","Rasgueo de vihuela, base armónica tradicional"],
+      ["guitarron bass","Bajo acústico grave, fundamento rítmico del mariachi"],
+      ["violin melody line","Melodía de violín, aporta emoción y color"],
+      ["harp accompaniment","Arpa como acompañamiento tradicional"]
+    ],
+    "Tempo/Ritmo": [
+      ["ranchera waltz 3/4","Compás de vals, típico de rancheras lentas"],
+      ["upbeat huapango rhythm","Ritmo alegre y sincopado, huapango"],
+      ["bolero ranchero tempo","Tempo lento y romántico"]
+    ],
+    "Producción": [
+      ["live mariachi ensemble recording","Grabación de conjunto en vivo, sensación auténtica"],
+      ["warm brass presence","Metales cálidos y protagonistas en la mezcla"]
+    ],
+    "Vocal": [
+      ["powerful emotional vocals","Voz potente y muy expresiva, sello del género"],
+      ["grito mexicano ad-lib","Grito tradicional (¡ay ay ay!) como adorno vocal"],
+      ["vibrato-rich vocals","Voz con vibrato marcado, característico del estilo"]
+    ]
+  },
+  lyrics: [
+    ["[Grito]","Grito tradicional mexicano, adorno emocional característico"],
+    ["[Instrumental Break]","Pasaje de trompetas o violines destacado"],
+    ["[Belting]","Voz potente en el clímax emocional"],
+    ["[Spoken Word]","Frase hablada de dedicatoria antes de cantar"],
+    ["[Outro]","Cierre con fuerza instrumental y vocal"]
+  ]
+}
+};
+
+/* ============================= ESTADO ============================= */
+let selectedTags = new Set();
+let currentRhythm = null;
+let currentVariant = null;
+let activeLyricTags = new Set();
+
+const rhythmSelect = document.getElementById('rhythmSelect');
+const variantSelect = document.getElementById('variantSelect');
+const styleBox = document.getElementById('styleBox');
+const lyricsBox = document.getElementById('lyricsBox');
+const tagTablesEl = document.getElementById('tagTables');
+const lyricSuggestBox = document.getElementById('lyricSuggestBox');
+const charCount = document.getElementById('charCount');
+const meterFill = document.getElementById('meterFill');
+const toast = document.getElementById('toast');
+
+/* ============================= INIT ============================= */
+function init(){
+  Object.keys(DATA).forEach(r=>{
+    const opt = document.createElement('option');
+    opt.value = r; opt.textContent = r;
+    rhythmSelect.appendChild(opt);
+  });
+  rhythmSelect.value = Object.keys(DATA)[0];
+  onRhythmChange();
+}
+
+function onRhythmChange(){
+  currentRhythm = rhythmSelect.value;
+  variantSelect.innerHTML = '';
+  DATA[currentRhythm].variants.forEach(v=>{
+    const opt = document.createElement('option');
+    opt.value = v; opt.textContent = v;
+    variantSelect.appendChild(opt);
+  });
+  currentVariant = DATA[currentRhythm].variants[0];
+  variantSelect.value = currentVariant;
+  regenerateDefaults();
+  renderTagTables();
+  renderLyricSuggestions();
+}
+
+function onVariantChange(){
+  currentVariant = variantSelect.value;
+  regenerateDefaults();
+  renderTagTables();
+}
+
+/* Elige por defecto: 1 tag de cada categoría (el primero) para partir con un prompt razonable */
+function regenerateDefaults(){
+  selectedTags = new Set();
+  const cats = DATA[currentRhythm].tags;
+  Object.values(cats).forEach(list=>{
+    if(list.length) selectedTags.add(list[0][0]);
+  });
+  updateStyleBoxFromTags();
+}
+
+function updateStyleBoxFromTags(){
+  const parts = [currentRhythm, currentVariant, ...Array.from(selectedTags)];
+  styleBox.value = parts.join(', ');
+  updateMeter();
+}
+
+function updateMeter(){
+  const len = styleBox.value.length;
+  charCount.textContent = `${len}/120`;
+  const pct = Math.min(100, (len/120)*100);
+  meterFill.style.width = pct + '%';
+  if(len > 120){
+    charCount.classList.add('over');
+  } else {
+    charCount.classList.remove('over');
+  }
+}
+
+function renderTagTables(){
+  tagTablesEl.innerHTML = '';
+  const cats = DATA[currentRhythm].tags;
+  Object.entries(cats).forEach(([catName, list])=>{
+    const label = document.createElement('div');
+    label.className = 'catlabel';
+    label.textContent = catName;
+    tagTablesEl.appendChild(label);
+
+    const table = document.createElement('table');
+    table.className = 'tagtable';
+    table.innerHTML = `<thead><tr><th></th><th>Etiqueta</th><th>Efecto que produce</th></tr></thead>`;
+    const tbody = document.createElement('tbody');
+    list.forEach(([tag, effect])=>{
+      const tr = document.createElement('tr');
+      const tdChk = document.createElement('td');
+      const chk = document.createElement('input');
+      chk.type='checkbox';
+      chk.checked = selectedTags.has(tag);
+      chk.addEventListener('change', ()=>{
+        if(chk.checked) selectedTags.add(tag); else selectedTags.delete(tag);
+        updateStyleBoxFromTags();
+      });
+      tdChk.appendChild(chk);
+      const tdTag = document.createElement('td');
+      tdTag.innerHTML = `<span class="tagchip">${tag}</span>`;
+      const tdEff = document.createElement('td');
+      tdEff.innerHTML = `<span class="effect">${effect}</span>`;
+      tr.appendChild(tdChk); tr.appendChild(tdTag); tr.appendChild(tdEff);
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    tagTablesEl.appendChild(table);
+  });
+}
+
+function renderLyricSuggestions(){
+  lyricSuggestBox.innerHTML = '';
+  activeLyricTags = new Set();
+  DATA[currentRhythm].lyrics.forEach(([tag, effect])=>{
+    const chip = document.createElement('div');
+    chip.className = 'lyrtag';
+    chip.innerHTML = `<span class="tagchip">${tag}</span><span class="tip">— ${effect}</span>`;
+    chip.addEventListener('click', ()=>{
+      insertLyricTag(tag);
+      chip.classList.add('active');
+    });
+    lyricSuggestBox.appendChild(chip);
+  });
+}
+
+function insertLyricTag(tag){
+  const cur = lyricsBox.value;
+  lyricsBox.value = cur ? cur + '\n' + tag + '\n' : tag + '\n';
+}
+
+function showToast(msg){
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(()=>toast.classList.remove('show'), 1600);
+}
+
+/* ============================= EVENTOS ============================= */
+rhythmSelect.addEventListener('change', onRhythmChange);
+variantSelect.addEventListener('change', onVariantChange);
+styleBox.addEventListener('input', updateMeter);
+
+document.getElementById('regenBtn').addEventListener('click', ()=>{
+  regenerateDefaults();
+  renderTagTables();
+});
+
+document.getElementById('clearBtn').addEventListener('click', ()=>{
+  selectedTags = new Set();
+  styleBox.value = `${currentRhythm}, ${currentVariant}`;
+  updateMeter();
+  renderTagTables();
+});
+
+document.getElementById('copyStyleBtn').addEventListener('click', ()=>{
+  navigator.clipboard.writeText(styleBox.value).then(()=>showToast('Style copiado'));
+});
+
+document.getElementById('copyLyricsBtn').addEventListener('click', ()=>{
+  navigator.clipboard.writeText(lyricsBox.value).then(()=>showToast('Lyrics copiado'));
+});
+
+document.getElementById('downloadBtn').addEventListener('click', ()=>{
+  const content = `=== STYLE OF MUSIC ===\n${styleBox.value}\n\n=== LYRICS ===\n${lyricsBox.value}\n`;
+  const blob = new Blob([content], {type:'text/plain'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `suno_prompt_${currentRhythm.replace(/[^a-z0-9]/gi,'_')}_${currentVariant.replace(/[^a-z0-9]/gi,'_')}.txt`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('Descargado');
+});
+
+init();
+</script>
+</body>
+</html>
