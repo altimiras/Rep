@@ -303,6 +303,12 @@ zipBtn.addEventListener('click', async () => {
   zipBtn.textContent = '⬇ Descargar todo (.zip)';
 });
 </script>
-
+<script>
+window.addEventListener('error', e => alert('ERROR: ' + e.message));
+navigator.serviceWorker?.getRegistrations().then(regs => {
+  alert('Service workers registrados: ' + regs.length);
+});
+</script>
+ 
 </body>
 </html>
