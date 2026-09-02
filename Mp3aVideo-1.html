@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fotos + Audios → Vídeos (lote)</title>
+<script src="./coi-serviceworker.js"></script>
+<script src="https://unpkg.com/@ffmpeg/ffmpeg@0.10.1/dist/ffmpeg.min.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/jszip@3.10.1/dist/jszip.min.js" crossorigin="anonymous"></script>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, Roboto, Arial, sans-serif;
+    background: #111;
+    color: #eee;
+    margin: 0;
+    padding: 16px;
+    max-width: 520px;
+    margin: 0 auto;
+  }
+  h1 { font-size: 1.25em; text-align: center; margin-bottom: 4px; }
+  p.sub { text-align: center; color: #999; font-size: 0.82em; margin-top: 0; }
+  .box {
+    background: #1c1c1c;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 14px;
+  }
+  label { display: block; font-size: 0.9em; margin-bottom: 6px; color: #ccc; }
+  input[type="file"] {
+    width: 100%;
+    padding: 10px;
+    background: #2a2a2a;
+    border: 1px solid #3a3a3a;
+    border-radius: 8px;
+    color: #eee;
+    margin-bottom: 12px;
+    font-size: 0.85em;
+  }
+  button {
+    width: 100%;
+    padding: 14px;
+    font-size: 1.05em;
+    font-weight: 600;
+    border: none;
+    border-radius: 10px;
+    background: #4f8cff;
+    color: white;
+    cursor: pointer;
+  }
+  button:disabled { background: #333; color: #777; }
+  button.secondary { background: #2ecc71; color: #072; margin-top: 8px; }
+  #status { text-align: center; font-size: 0.9em; color: #aaa; min-height: 20px; margin-top: 10px; }
+  .bar { height: 6px; background: #333; border-radius: 3px; overflow: hidden; margin-top: 10px; }
+  .bar > div { height: 100%; background: #4f8cff; width: 0%; transition: width 0.2s; }
+  table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85em; }
+  td { padding: 6px 4px; border-bottom: 1px solid #2a2a2a; }
+  td.state { text-align: right; white-space: nowrap; }
+  .ok { color: #2ecc71; }
+  .pending { color: #888; }
+  .working { color: #4f8cff; }
+  .err { color: #ff6b6b; }
+  #debugLog {
+    font-family: monospace; font-size: 0.72em; color: #777;
+    background: #0a0a0a; border-radius: 6px; padding: 8px; margin-top: 8px;
+    max-height: 100px; overflow-y: auto; white-space: pre-wrap;
+  }
+  a.download { display: block; text-align: center; margin-top: 6px; padding: 10px;
+    background: #2a2a2a; color: #4f8cff; border-radius: 8px; text-decoration: none; font-size: 0.85em; }
+</style>
+</head>
+<body>
+
+<h1>🎵📷 → 🎬 Vídeos (lote)</h1>
+<p class="sub">MP4 real vía ffmpeg.wasm — primera carga necesita internet, luego funciona offline</p>
+<p class="sub" id="protocolWarning" style="color:#ff6b6b; display:none;">⚠ Esta página debe abrirse desde una URL https:// (ej. GitHub Pages), no como archivo local, o ffmpeg no podrá funcionar.</p>
+<p class="sub" id="isolationStatus" style="font-weight:600;"></p>
+
+<div class="box">
+  <label>Fotos (varias)</label>
+  <input type="file" id="imgInput" accept="image/*" multiple>
+
+  <label>Audios mp3 (varios)</label>
+  <input type="file" id="audioInput" accept="audio/*" multiple>
+
+  <button id="pairBtn">Emparejar archivos</button>
+</div>
+
+<div class="box" id="pairBox" style="display:none">
+  <div id="pairInfo" style="font-size:0.85em; color:#aaa; margin-bottom:6px;"></div>
+  <table id="pairTable"></table>
+  <button id="genBtn" style="margin-top:14px;">Generar todos los vídeos</button>
+  <div class="bar"><div id="barFill"></div></div>
+  <div id="status"></div>
+  <div id="debugLog"></div>
+</div>
+
+<div class="box" id="resultBox" style="display:none">
+  <div id="downloadLinks"></div>
+  <button id="zipBtn" class="secondary">⬇ Descargar todo (.zip)</button>
+</div>
+
+<script>
+const imgInput = document.getElementById('imgInput');
+const audioInput = document.getElementById('audioInput');
+const pairBtn = document.getElementById('pairBtn');
+const pairBox = document.getElementById('pairBox');
+const pairInfo = document.getElementById('pairInfo');
+const pairTable = document.getElementById('pairTable');
+const genBtn = document.getElementById('genBtn');
+const statusEl = document.getElementById('status');
+const barFill = document.getElementById('barFill');
+const debugLog = document.getElementById('debugLog');
+const resultBox = document.getElementById('resultBox');
+const downloadLinks = document.getElementById('downloadLinks');
+const zipBtn = document.getElementById('zipBtn');
+
+let pairs = [];
+let results = []; // { name, blob }
+
+if (location.protocol === 'file:') {
+  document.getElementById('protocolWarning').style.display = 'block';
+}
+
+(function showIsolationStatus() {
+  const el = document.getElementById('isolationStatus');
+  const coi = window.crossOriginIsolated === true;
+  const sab = typeof SharedArrayBuffer !== 'undefined';
+  el.textContent = `Aislamiento cross-origin: ${coi ? '✅' : '❌'}  |  SharedArrayBuffer: ${sab ? '✅' : '❌'}`;
+  el.style.color = (coi && sab) ? '#2ecc71' : '#ff6b6b';
+  if (!coi) {
+    el.textContent += ' — recarga la página (a veces hace falta 1-2 recargas tras la primera visita)';
+  }
+})();
+
+function setStatus(msg) { statusEl.textContent = msg; }
+function log(msg) {
+  debugLog.textContent += msg + '\n';
+  debugLog.scrollTop = debugLog.scrollHeight;
+  console.log(msg);
+}
+function baseName(name) {
+  return name.replace(/\.[^/.]+$/, '').toLowerCase().trim();
+}
+
+pairBtn.addEventListener('click', () => {
+  const imgs = Array.from(imgInput.files);
+  const auds = Array.from(audioInput.files);
+
+  if (imgs.length === 0 || auds.length === 0) {
+    alert('Selecciona al menos una foto y un audio.');
+    return;
+  }
+
+  pairs = [];
+  const usedAuds = new Set();
+
+  // 1) Emparejar por nombre de archivo igual (sin extensión)
+  imgs.forEach(img => {
+    const b = baseName(img.name);
+    const match = auds.find(a => !usedAuds.has(a.name) && baseName(a.name) === b);
+    if (match) {
+      pairs.push({ img, aud: match, name: baseName(img.name) });
+      usedAuds.add(match.name);
+    }
+  });
+
+  // 2) Lo que quede sin emparejar, por orden alfabético
+  const remainingImgs = imgs.filter(img => !pairs.find(p => p.img === img));
+  const remainingAuds = auds.filter(a => !usedAuds.has(a.name));
+  remainingImgs.sort((a, b) => a.name.localeCompare(b.name));
+  remainingAuds.sort((a, b) => a.name.localeCompare(b.name));
+  const n = Math.min(remainingImgs.length, remainingAuds.length);
+  for (let i = 0; i < n; i++) {
+    pairs.push({ img: remainingImgs[i], aud: remainingAuds[i], name: baseName(remainingImgs[i].name) });
+  }
+
+  pairs.sort((a, b) => a.name.localeCompare(b.name));
+
+  pairInfo.textContent = `${pairs.length} par(es) detectado(s) de ${imgs.length} foto(s) y ${auds.length} audio(s).`;
+  if (imgs.length !== auds.length || pairs.length < Math.max(imgs.length, auds.length)) {
+    pairInfo.textContent += ' Revisa que las parejas sean correctas antes de generar.';
+  }
+
+  pairTable.innerHTML = pairs.map((p, i) => `
+    <tr>
+      <td>${i + 1}. 📷 ${p.img.name}<br>🎵 ${p.aud.name}</td>
+      <td class="state pending" id="state-${i}">pendiente</td>
+    </tr>
+  `).join('');
+
+  pairBox.style.display = 'block';
+  resultBox.style.display = 'none';
+  downloadLinks.innerHTML = '';
+  results = [];
+});
+
+genBtn.addEventListener('click', async () => {
+  if (pairs.length === 0) return;
+  genBtn.disabled = true;
+  debugLog.textContent = '';
+  results = [];
+  downloadLinks.innerHTML = '';
+  resultBox.style.display = 'none';
+
+  const { createFFmpeg, fetchFile } = FFmpeg;
+  const ffmpeg = createFFmpeg({
+    log: false,
+    corePath: 'https://unpkg.com/@ffmpeg/core@0.10.0/dist/ffmpeg-core.js'
+  });
+
+  try {
+    setStatus('Cargando motor ffmpeg (puede tardar la primera vez)...');
+    log('Cargando ffmpeg-core...');
+    await ffmpeg.load();
+    log('✓ ffmpeg cargado');
+
+    for (let i = 0; i < pairs.length; i++) {
+      const p = pairs[i];
+      const stateEl = document.getElementById('state-' + i);
+      stateEl.textContent = 'procesando...';
+      stateEl.className = 'state working';
+      setStatus(`Generando ${i + 1}/${pairs.length}: ${p.name}`);
+      log(`--- Par ${i + 1}: ${p.img.name} + ${p.aud.name} ---`);
+
+      try {
+        const imgExt = p.img.name.split('.').pop().toLowerCase();
+        const audExt = p.aud.name.split('.').pop().toLowerCase();
+        const imgFileName = 'in_img.' + imgExt;
+        const audFileName = 'in_aud.' + audExt;
+        const outFileName = 'out.mp4';
+
+        ffmpeg.FS('writeFile', imgFileName, await fetchFile(p.img));
+        ffmpeg.FS('writeFile', audFileName, await fetchFile(p.aud));
+
+        await ffmpeg.run(
+          '-loop', '1',
+          '-i', imgFileName,
+          '-i', audFileName,
+          '-c:v', 'libx264',
+          '-tune', 'stillimage',
+          '-c:a', 'aac',
+          '-b:a', '192k',
+          '-pix_fmt', 'yuv420p',
+          '-vf', 'scale=1280:-2',
+          '-shortest',
+          outFileName
+        );
+
+        const data = ffmpeg.FS('readFile', outFileName);
+        const blob = new Blob([data.buffer], { type: 'video/mp4' });
+        results.push({ name: p.name + '.mp4', blob });
+        log(`✓ Generado (${(blob.size / 1024 / 1024).toFixed(1)} MB)`);
+
+        stateEl.textContent = '✅ listo';
+        stateEl.className = 'state ok';
+
+        // limpiar FS para liberar memoria
+        try { ffmpeg.FS('unlink', imgFileName); } catch(e) {}
+        try { ffmpeg.FS('unlink', audFileName); } catch(e) {}
+        try { ffmpeg.FS('unlink', outFileName); } catch(e) {}
+
+      } catch (err) {
+        log('✗ Error en este par: ' + err.message);
+        stateEl.textContent = '❌ error';
+        stateEl.className = 'state err';
+      }
+
+      barFill.style.width = (((i + 1) / pairs.length) * 100) + '%';
+    }
+
+    setStatus(`Terminado: ${results.length}/${pairs.length} vídeos generados.`);
+
+    if (results.length > 0) {
+      downloadLinks.innerHTML = results.map((r, i) => {
+        const url = URL.createObjectURL(r.blob);
+        return `<a class="download" download="${r.name}" href="${url}">⬇ ${r.name} (${(r.blob.size/1024/1024).toFixed(1)} MB)</a>`;
+      }).join('');
+      resultBox.style.display = 'block';
+    }
+
+  } catch (err) {
+    log('✗ EXCEPCIÓN: ' + err.message);
+    setStatus('Error cargando ffmpeg: ' + err.message + ' (¿tienes conexión a internet la primera vez?)');
+  } finally {
+    genBtn.disabled = false;
+  }
+});
+
+zipBtn.addEventListener('click', async () => {
+  if (results.length === 0) return;
+  zipBtn.disabled = true;
+  zipBtn.textContent = 'Comprimiendo...';
+  const zip = new JSZip();
+  results.forEach(r => zip.file(r.name, r.blob));
+  const zipBlob = await zip.generateAsync({ type: 'blob' });
+  const url = URL.createObjectURL(zipBlob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'videos.zip';
+  a.click();
+  zipBtn.disabled = false;
+  zipBtn.textContent = '⬇ Descargar todo (.zip)';
+});
+</script>
+
+</body>
+</html>
