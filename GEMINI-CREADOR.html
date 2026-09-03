@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Configurador Musical Pro - Gemini Music</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --border: #334155;
+      --accent: #6366f1;
+      --accent-hover: #4f46e5;
+      --success: #10b981;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+    }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+    }
+    .container {
+      width: 100%;
+      max-width: 950px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    h1 { margin: 0; font-size: 1.8rem; color: #fff; }
+    h2 { margin: 0 0 15px 0; font-size: 1.2rem; color: #cbd5e1; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .card {
+      background-color: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    label {
+      font-size: 0.8rem;
+      color: var(--muted);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    select, input, textarea {
+      background-color: #0f172a;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 10px;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      outline: none;
+    }
+    select:focus, input:focus, textarea:focus {
+      border-color: var(--accent);
+    }
+    textarea {
+      resize: vertical;
+      min-height: 90px;
+      font-family: monospace;
+    }
+    button {
+      background-color: var(--accent);
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover { background-color: var(--accent-hover); }
+    .btn-action {
+      background-color: #3b82f6;
+      margin-top: 8px;
+    }
+    .btn-export {
+      background-color: var(--success);
+      width: 100%;
+      font-size: 1.1rem;
+      padding: 14px;
+      margin-top: 15px;
+    }
+    .btn-export:hover { background-color: #059669; }
+    .output-box {
+      background-color: #020617;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 15px;
+      font-family: monospace;
+      font-size: 0.88rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+      color: #38bdf8;
+      margin-top: 10px;
+    }
+    .badge {
+      display: inline-block;
+      background: #312e81;
+      color: #a5b4fc;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      margin-left: 6px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Configurador de Producción Musical Pro</h1>
+
+  <!-- SECCIÓN ESTILO -->
+  <div class="card">
+    <h2>1. Sección Estilo y Sonido</h2>
+    <div class="grid">
+      
+      <!-- RITMO -->
+      <div class="form-group">
+        <label>Selector de Ritmo</label>
+        <select id="rhythm" onchange="updateVariations(); updateAll();">
+          <option value="rock">Rock</option>
+          <option value="pop">Pop</option>
+          <option value="latin">Latino / Folclor</option>
+          <option value="jazz">Jazz / Blues</option>
+          <option value="electronic">Electrónica / Dance</option>
+          <option value="urban">Urbano / Hip Hop</option>
+          <option value="classical">Clásica / Orquestal</option>
+          <option value="country">Country / Americana</option>
+        </select>
+      </div>
+
+      <!-- VARIACIONES Y COMPASES -->
+      <div class="form-group">
+        <label>Variante y Métrica</label>
+        <select id="variation" onchange="updateAll()">
+          <!-- Se puebla dinámicamente -->
+        </select>
+      </div>
+
+      <!-- INSTRUMENTO LÍDER -->
+      <div class="form-group">
+        <label>Instrumento Líder</label>
+        <select id="leadInst" onchange="updateAll()">
+          <option value="nylon-string acoustic guitar with percussive body taps">Guitarra Acústica Nylon (Española/Criolla)</option>
+          <option value="steel-string acoustic guitar with bright strumming">Guitarra Acústica Cuerdas de Acero</option>
+          <option value="vintage Fender Stratocaster electric guitar with clean tone">Guitarra Eléctrica Clean Vintage</option>
+          <option value="distorted electric guitar lead with heavy overdrive">Guitarra Eléctrica con Distorsión</option>
+          <option value="grand piano with expressive hammer dynamics">Piano de Cola Concert Grand</option>
+          <option value="vintage Fender Rhodes electric piano">Piano Eléctrico Rhodes</option>
+          <option value="Hammond organ B3 with rotary speaker effect">Órgano Hammond B3</option>
+          <option value="analog Prophet-5 synthesizer lead">Sintetizador Analógico Lead</option>
+          <option value="bright accordion with rhythmic bellows">Acordeón Tradicional</option>
+          <option value="orchestral solo violin with emotional vibrato">Violín Solista Orquestal</option>
+          <option value="tenor saxophone with warm breathy tone">Saxofón Tenor</option>
+          <option value="percussive concert harp">Arpa Concertina / Criolla</option>
+        </select>
+      </div>
+
+      <!-- ACOMPAÑAMIENTO -->
+      <div class="form-group">
+        <label>Base Rítmica y Armónica</label>
+        <select id="rhythmInst" onchange="updateAll()">
+          <option value="tight acoustic drum kit and electric bass guitar">Batería Acústica + Bajo Eléctrico</option>
+          <option value="upright double bass, brushed drums, and soft piano chords">Contrabajo + Escobillas + Piano</option>
+          <option value="tambourine, upright bass, and nylon guitar rasgueado">Pandereta + Contrabajo + Rasgueo</option>
+          <option value="bombo leguero, pandereta, and acoustic guitar strumming">Bombo Legüero + Pandereta + Guitarra</option>
+          <option value="retro 80s 808 drum machine beat and synth bassline">Batería 808 + Bajo Sintetizador</option>
+          <option value="heavy orchestral timpani, cellos, and brass section">Tímpani + Chelos + Bronces Orquestales</option>
+          <option value="percussive hand claps, cajon, and bass">Cajón Peruano/Flamenco + Palmas + Bajo</option>
+        </select>
+      </div>
+
+      <!-- VOCES -->
+      <div class="form-group">
+        <label>Selector de Voces</label>
+        <select id="vocals" onchange="updateAll()">
+          <option value="expressive male lead vocals">Voz Masculina Solista</option>
+          <option value="warm female contralto lead vocals">Voz Femenina Solista</option>
+          <option value="dual male and female vocal harmonies in thirds">Dúo Masculino / Femenino (Armonía)</option>
+          <option value="full gospel choir with powerful lead singer">Coro Gospel / Polifónico con Solista</option>
+          <option value="whispering, intimate acoustic vocal performance">Voz Intimista / Susurrada</option>
+          <option value="rugged, raspy folk lead vocals">Voz Rasgada / Folclórica Tradicional</option>
+          <option value="purely instrumental track with no vocals">Instrumental (Sin Voz)</option>
+        </select>
+      </div>
+
+      <!-- TEMPO Y SUGERENCIAS -->
+      <div class="form-group">
+        <label>Sugerencias de Mezcla / Producción</label>
+        <select id="production" onchange="updateAll()">
+          <option value="analog warm mix, studio recording, wide stereo image">Mezcla Analógica Cálida de Estudio</option>
+          <option value="pristine modern digital production, punchy compression">Digital Moderna y Potente</option>
+          <option value="rustic hall acoustics, natural room reverb, dry raw feel">Acústica de Salón En Vivo / Directo</option>
+          <option value="vintage 1970s tape saturation, warm low end">Saturación de Cinta Estilo 1970s</option>
+          <option value="lo-fi vinyl aesthetic, subtle room ambience">Estilo Lo-Fi / Vinilo Cálido</option>
+        </select>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- SECCIÓN LÍRICA -->
+  <div class="card">
+    <h2>2. Sección Lírica y Estructura (Bloque de 30 Segundos)</h2>
+    
+    <div class="grid">
+      <!-- NÚMERO Y SECCIÓN -->
+      <div class="form-group">
+        <label>Sección de la Canción (Número de Bloque)</label>
+        <select id="sectionNumber" onchange="updateAll()">
+          <option value="Sección 1 (0:00 - 0:30): Introducción y Verso 1">Sección 1 (0:00 - 0:30): Intro + Verso 1</option>
+          <option value="Sección 2 (0:30 - 1:00): Verso 2 y Pre-Coro">Sección 2 (0:30 - 1:00): Verso 2 + Pre-Coro</option>
+          <option value="Sección 3 (1:00 - 1:30): Coro Principal">Sección 3 (1:00 - 1:30): Coro Principal</option>
+          <option value="Sección 4 (1:30 - 2:00): Puente o Solo Instrumental">Sección 4 (1:30 - 2:00): Puente / Solo</option>
+          <option value="Sección 5 (2:00 - 2:30): Coro Final y Remate / Outro">Sección 5 (2:00 - 2:30): Coro Final / Outro</option>
+        </select>
+      </div>
+
+      <!-- CUADRO TÍTULO -->
+      <div class="form-group">
+        <label>Título de la Canción</label>
+        <input type="text" id="songTitle" value="Mi Canción Proyecto" oninput="updateAll()">
+      </div>
+    </div>
+
+    <!-- INGRESO DE TEXTO BRUTO -->
+    <div class="form-group">
+      <label>Cuadro de Texto Bruto (Pega tu idea o letra aquí):</label>
+      <textarea id="rawText" placeholder="Escribe o pega aquí la letra para esta sección de 30 segundos..."></textarea>
+      <button class="btn-action" onclick="analyzeAndFormatLyrics()">Estructurar y Ajustar Métrica a 30s</button>
+    </div>
+
+    <!-- LETRA SUGERIDA Y REVISADA -->
+    <div class="form-group" style="margin-top: 15px;">
+      <label>Letra Estructurada (Modificable con marcas de tiempo):</label>
+      <textarea id="suggestedLyrics" placeholder="Aquí aparecerá la letra formateada con tiempos [0.0:], [2.5:]..." oninput="updateAll()"></textarea>
+    </div>
+  </div>
+
+  <!-- EXPORTAR -->
+  <div class="card">
+    <h2>3. Generar Solicitud para Gemini</h2>
+    <label>Resumen completo estructurado que se enviará al chat:</label>
+    <div id="finalOutput" class="output-box"></div>
+
+    <button class="btn-export" onclick="copyPromptToChat()">
+      Copiar Solicitud Completa para Pegar en Gemini Chat
+    </button>
+  </div>
+</div>
+
+<script>
+  // DICCIONARIO DE VARIACIONES Y COMPASES POR RITMO
+  const variationsData = {
+    rock: [
+      { name: "Rock Clásico / Hard Rock (Compás 4/4 - 120 BPM)", val: "Classic Hard Rock, 4/4 time signature, driving rhythm, 120 bpm" },
+      { name: "Rock Progresivo (Compás 7/8 o 6/8 - 110 BPM)", val: "Progressive Rock, complex 6/8 syncopated time signature, 110 bpm" },
+      { name: "Blues Rock (Compás 12/8 Shuffle - 90 BPM)", val: "Blues Rock, 12/8 slow shuffle time signature, 90 bpm" },
+      { name: "Balada Rock (Compás 4/4 Lento - 75 BPM)", val: "Power Rock Ballad, 4/4 slow tempo, emotional, 75 bpm" }
+    ],
+    pop: [
+      { name: "Pop Moderno (Compás 4/4 Dance - 118 BPM)", val: "Modern Pop, 4/4 standard radio time signature, energetic, 118 bpm" },
+      { name: "Pop Acústico / Singer-Songwriter (Compás 4/4 - 95 BPM)", val: "Acoustic Pop, 4/4 organic rhythm, warm atmosphere, 95 bpm" },
+      { name: "Synth Pop 80s (Compás 4/4 - 124 BPM)", val: "1980s Synth Pop, 4/4 driving electronic time signature, 124 bpm" }
+    ],
+    latin: [
+      { name: "Cueca Chilena Tradicional (Compás 6/8 Sincopado - 125 BPM)", val: "Traditional Chilean Cueca folkloric style, 6/8 syncopated time signature with rasgueado and body taps, 125 bpm" },
+      { name: "Bolero Clásico (Compás 4/4 Lento - 80 BPM)", val: "Classic Latin Bolero, slow 4/4 time signature, romantic percussive rhythm, 80 bpm" },
+      { name: "Tango Porteño (Compás 2/4 o 4/4 Marcado - 120 BPM)", val: "Argentine Tango, sharp 2/4 rhythm signature, dramatic, 120 bpm" },
+      { name: "Bossa Nova (Compás 2/4 Sincopado - 88 BPM)", val: "Smooth Bossa Nova, 2/4 syncopated jazz-latin time signature, 88 bpm" },
+      { name: "Cumbia Sudamericana (Compás 2/4 Rítmico - 100 BPM)", val: "Tropical Cumbia rhythm, 2/4 accent on offbeats, 100 bpm" },
+      { name: "Vals Criollo / Folk (Compás 3/4 - 90 BPM)", val: "Waltz Folk, 3/4 triple meter time signature, 90 bpm" }
+    ],
+    jazz: [
+      { name: "Swing Jazz (Compás 4/4 Swing - 130 BPM)", val: "Classic Swing Jazz, 4/4 swing time signature, walking rhythm, 130 bpm" },
+      { name: "Smooth Jazz / Fusion (Compás 4/4 - 95 BPM)", val: "Smooth Jazz Fusion, 4/4 relaxing time signature, 95 bpm" },
+      { name: "Slow Blues (Compás 12/8 - 65 BPM)", val: "Deep Slow Blues, 12/8 time signature, expressive, 65 bpm" }
+    ],
+    electronic: [
+      { name: "Synthwave / Retrowave (Compás 4/4 Four-on-the-floor - 115 BPM)", val: "1980s Synthwave, 4/4 synth beat time signature, 115 bpm" },
+      { name: "Ambient / Chillout (Compás 4/4 Lento - 80 BPM)", val: "Ambient Electronic, 4/4 atmospheric floating time signature, 80 bpm" },
+      { name: "House / EDM (Compás 4/4 - 128 BPM)", val: "Upbeat House Electronic, 4/4 pulse, 128 bpm" }
+    ],
+    urban: [
+      { name: "Hip Hop Boom Bap (Compás 4/4 - 90 BPM)", val: "Classic 90s Boom Bap Hip Hop, 4/4 heavy snare time signature, 90 bpm" },
+      { name: "Trap / Modern Urban (Compás 4/4 Triplet Hi-Hats - 140 BPM)", val: "Modern Urban Trap, 4/4 half-time time signature with fast hi-hats, 140 bpm" }
+    ],
+    classical: [
+      { name: "Sinfónico / Épico (Compás 4/4 Orquestal - 100 BPM)", val: "Symphonic Orchestral, dramatic 4/4 time signature, 100 bpm" },
+      { name: "Barroco / Cámara (Compás 3/4 o 4/4 - 90 BPM)", val: "Chamber Classical, refined 3/4 time signature, 90 bpm" }
+    ],
+    country: [
+      { name: "Country Folk / Bluegrass (Compás 2/4 o 4/4 Rápido - 130 BPM)", val: "Country Bluegrass, fast 2/4 percussive time signature, 130 bpm" },
+      { name: "Country Ballad (Compás 4/4 Lento - 80 BPM)", val: "Acoustic Country Ballad, 4/4 time signature, 80 bpm" }
+    ]
+  };
+
+  function updateVariations() {
+    const rhythm = document.getElementById('rhythm').value;
+    const varSelect = document.getElementById('variation');
+    varSelect.innerHTML = '';
+
+    const list = variationsData[rhythm] || variationsData['rock'];
+    list.forEach(item => {
+      let opt = document.createElement('option');
+      opt.value = item.val;
+      opt.innerText = item.name;
+      varSelect.appendChild(opt);
+    });
+  }
+
+  function analyzeAndFormatLyrics() {
+    const raw = document.getElementById('rawText').value.trim();
+    if (!raw) {
+      alert("Por favor escribe o pega algún texto en el cuadro de texto bruto.");
+      return;
+    }
+
+    const lines = raw.split('\n').filter(l => l.trim() !== '');
+    let formatted = '';
+    let currentTime = 0;
+    
+    // Calculamos el espacio necesario dentro de la ventana de 30 segundos
+    const lineCount = lines.length;
+    let step = 3.0; // tiempo base por línea
+    
+    if (lineCount > 8) {
+      step = 2.0; // si hay muchas líneas, ajustamos para no exceder 30s
+    } else if (lineCount <= 4) {
+      step = 4.5;
+    }
+
+    lines.forEach((line) => {
+      if (currentTime <= 26.0) {
+        let ts = currentTime.toFixed(1);
+        formatted += `[${ts}:] ${line.trim()}\n`;
+        currentTime += step;
+      }
+    });
+
+    document.getElementById('suggestedLyrics').value = formatted.trim();
+    updateAll();
+  }
+
+  function updateAll() {
+    const title = document.getElementById('songTitle').value.trim() || "Sin Título";
+    const section = document.getElementById('sectionNumber').value;
+    const variationVal = document.getElementById('variation').value;
+    const leadInst = document.getElementById('leadInst').value;
+    const rhythmInst = document.getElementById('rhythmInst').value;
+    const vocals = document.getElementById('vocals').value;
+    const production = document.getElementById('production').value;
+    const lyrics = document.getElementById('suggestedLyrics').value.trim() || "Instrumental / Sin Letra";
+
+    const captionText = `A piece in style: ${variationVal}. Featuring ${leadInst} supported by ${rhythmInst}. Driven by ${vocals}. Production style: ${production}.`;
+
+    const fullPrompt = `Hola Gemini, vamos a generar la siguiente parte de mi canción:
+
+**TÍTULO DEL PROYECTO:** ${title}
+**BLOQUE:** ${section}
+
+**CAPTION DE PRODUCCIÓN:**
+${captionText}
+
+**LYRICS (Ajustado a 30 segundos):**
+${lyrics}`;
+
+    document.getElementById('finalOutput').innerText = fullPrompt;
+  }
+
+  function copyPromptToChat() {
+    const text = document.getElementById('finalOutput').innerText;
+    navigator.clipboard.writeText(text).then(() => {
+      alert("¡Solicitud copiada al portapapeles! Presiona Ctrl + V aquí en nuestro chat para generar esta sección de la música.");
+    });
+  }
+
+  // Inicialización
+  updateVariations();
+  updateAll();
+</script>
+
+</body>
+</html>
