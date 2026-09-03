@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Constructor de Prompts para Udio</title>
+<style>
+  :root {
+    --bg: #12141a;
+    --panel: #1c1f28;
+    --panel-alt: #232733;
+    --border: #323848;
+    --text: #e8eaf0;
+    --text-dim: #9aa1b4;
+    --accent: #6fd3c7;
+    --accent-2: #f2b880;
+    --accent-3: #d98fd0;
+    --danger: #e0777a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 12px;
+    line-height: 1.4;
+  }
+  h1 {
+    font-size: 1.3rem;
+    margin: 4px 0 2px;
+    color: var(--accent);
+  }
+  .subtitle {
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    margin-bottom: 14px;
+  }
+  .section {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+  .section h2 {
+    font-size: 0.95rem;
+    margin: 0 0 10px;
+    color: var(--accent-2);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  label.field-label {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    margin: 8px 0 4px;
+  }
+  select, input[type="text"] {
+    width: 100%;
+    padding: 8px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--panel-alt);
+    color: var(--text);
+    font-size: 0.9rem;
+  }
+  .checkbox-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+    margin-top: 4px;
+  }
+  .checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--panel-alt);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 8px;
+    font-size: 0.82rem;
+  }
+  .checkbox-item input { flex-shrink: 0; }
+  .checkbox-item label { cursor: pointer; }
+  .output-box {
+    background: var(--panel-alt);
+    border: 1.5px solid var(--accent);
+    border-radius: 8px;
+    padding: 10px;
+    font-size: 0.92rem;
+    min-height: 60px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+  .btn-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  button {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .btn-copy { background: var(--accent); color: #0b1210; }
+  .btn-reset { background: var(--panel-alt); color: var(--danger); border: 1px solid var(--danger); }
+  .copied-msg {
+    text-align: center;
+    color: var(--accent);
+    font-size: 0.8rem;
+    margin-top: 6px;
+    height: 14px;
+  }
+  details {
+    background: var(--panel-alt);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 10px;
+    margin-top: 10px;
+  }
+  summary {
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: var(--accent-3);
+    font-weight: 600;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 8px;
+    font-size: 0.78rem;
+  }
+  th, td {
+    text-align: left;
+    padding: 5px 4px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  th { color: var(--accent-2); }
+  .notes-text { font-size: 0.82rem; color: var(--text-dim); margin-top: 6px; }
+  .char-count { font-size: 0.72rem; color: var(--text-dim); text-align: right; margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<h1>🎛️ Constructor de Prompts — Udio</h1>
+<div class="subtitle">Arma el campo de estilo (Tags) para Udio con lenguaje natural separado por comas. Funciona offline, sin conexión ni servidor.</div>
+
+<!-- IDENTIDAD -->
+<div class="section">
+  <h2>🎵 Identidad de la canción</h2>
+  <label class="field-label">Título (opcional, solo referencia tuya)</label>
+  <input type="text" id="titulo" placeholder="Ej: El tío Nano">
+
+  <label class="field-label">Género / subgénero</label>
+  <input type="text" id="genero" list="generos-list" placeholder="Ej: cueca chilena, tango argentino, balada pop">
+  <datalist id="generos-list">
+    <option value="cueca chilena tradicional">
+    <option value="tango argentino de los 40s">
+    <option value="salsa cubana dura">
+    <option value="salsa romántica">
+    <option value="rock and roll clásico">
+    <option value="balada melódica latina">
+    <option value="bolero">
+    <option value="cumbia chilena">
+    <option value="folk andino">
+    <option value="indie pop">
+    <option value="reggaeton melódico">
+  </datalist>
+
+  <label class="field-label">Época / referencia sonora</label>
+  <select id="epoca">
+    <option value="">— sin especificar —</option>
+    <option value="sonido vintage de los años 40">Vintage años 40</option>
+    <option value="sonido clásico de los años 60">Clásico años 60</option>
+    <option value="sonido analógico de los años 70">Analógico años 70</option>
+    <option value="producción de los años 80 con sintetizadores">Años 80 (synth)</option>
+    <option value="sonido acústico contemporáneo">Contemporáneo acústico</option>
+    <option value="producción moderna y radio-ready">Moderno / radio-ready</option>
+    <option value="estética lo-fi casera">Lo-fi casero</option>
+  </select>
+</div>
+
+<!-- VOZ -->
+<div class="section">
+  <h2>🎤 Voz</h2>
+  <label class="field-label">Tipo de voz</label>
+  <select id="tipoVoz">
+    <option value="">— sin especificar —</option>
+    <option value="voz masculina">Masculina</option>
+    <option value="voz femenina">Femenina</option>
+    <option value="dueto de voz masculina y femenina">Dueto (masc. + fem.)</option>
+    <option value="coro a varias voces">Coro</option>
+    <option value="instrumental, sin voz">Instrumental (sin voz)</option>
+  </select>
+
+  <label class="field-label">Estilo vocal (elige las que apliquen)</label>
+  <div class="checkbox-grid" id="estiloVocalGrid">
+    <div class="checkbox-item"><input type="checkbox" value="voz cálida y expresiva" id="ev1"><label for="ev1">Cálida y expresiva</label></div>
+    <div class="checkbox-item"><input type="checkbox" value="voz potente tipo belting" id="ev2"><label for="ev2">Potente (belting)</label></div>
+    <div class="checkbox-item"><input type="checkbox" value="voz suave y susurrante" id="ev3"><label for="ev3">Suave / susurrante</label></div>
+    <div class="checkbox-item"><input type="checkbox" value="voz rasposa con carácter" id="ev4"><label for="ev4">Rasposa / con carácter</label></div>
+    <div class="checkbox-item"><input type="checkbox" value="voz con vibrato natural" id="ev5"><label for="ev5">Vibrato natural</label></div>
+    <div class="checkbox-item"><input type="checkbox" value="voz melancólica" id="ev6"><label for="ev6">Melancólica</label></div>
+    <div class="checkbox-item"><input type="checkbox" value="entrega tipo spoken word" id="ev7"><label for="ev7">Spoken word</label></div>
+    <div class="checkbox-item"><input type="checkbox" value="voz apasionada y desgarrada" id="ev8"><label for="ev8">Apasionada / desgarrada</label></div>
+  </div>
+
+  <label class="field-label">Variante regional del español (opcional)</label>
+  <select id="variante">
+    <option value="">— sin especificar —</option>
+    <option value="acento chileno">Chileno</option>
+    <option value="acento argentino rioplatense">Argentino rioplatense</option>
+    <option value="acento mexicano">Mexicano</option>
+    <option value="acento caribeño">Caribeño</option>
+    <option value="acento español de España">Español (España)</option>
+    <option value="acento andino">Andino</option>
+  </select>
+</div>
+
+<!-- MOOD -->
+<div class="section">
+  <h2>💫 Emoción / mood</h2>
+  <div class="checkbox-grid" id="moodGrid">
+    <div class="checkbox-item"><input type="checkbox" value="melancólico" id="m1"><label for="m1">Melancólico</label></div>
+    <div class="checkbox-item"><input type="checkbox" value="alegre y luminoso" id="m2"><label for="m2">Alegre / luminoso</label></div>
+    <div class="checkbox-item"><input type="checkbox" value="nostálgico" id="m3"><label for="m3">Nostálgico</label></div>
+    <div class="checkbox-item"><input type="checkbox" value="romántico" id="m4"><label for="m4">Romántico</label></div>
+    <div class="checkbox-item"><input type="checkbox" value="enérgico y festivo" id="m5"><label for="m5">Enérgico / festivo</label></div>
+    <div class="checkbox-item"><input type="checkbox" value="íntimo y cercano" id="m6"><label for="m6">Íntimo / cercano</label></div>
+    <div class="checkbox-item"><input type="checkbox" value="épico y triunfal" id="m7"><label for="m7">Épico / triunfal</label></div>
+    <div class="checkbox-item"><input type="checkbox" value="soñador y etéreo" id="m8"><label for="m8">Soñador / etéreo</label></div>
+    <div class="checkbox-item"><input type="checkbox" value="oscuro y dramático" id="m9"><label for="m9">Oscuro / dramático</label></div>
+    <div class="checkbox-item"><input type="checkbox" value="esperanzador" id="m10"><label for="m10">Esperanzador</label></div>
+  </div>
+</div>
+
+<!-- TEMPO -->
+<div class="section">
+  <h2>🥁 Tempo</h2>
+  <select id="tempo">
+    <option value="">— sin especificar —</option>
+    <option value="balada lenta, tempo pausado alrededor de 65 bpm">Balada lenta (~65 bpm)</option>
+    <option value="tempo medio relajado alrededor de 90 bpm">Medio relajado (~90 bpm)</option>
+    <option value="tempo medio bailable alrededor de 110 bpm">Medio bailable (~110 bpm)</option>
+    <option value="tempo animado alrededor de 130 bpm">Animado (~130 bpm)</option>
+    <option value="tempo rápido y enérgico por encima de 145 bpm">Rápido / enérgico (145+ bpm)</option>
+  </select>
+</div>
+
+<!-- INSTRUMENTACION -->
+<div class="section">
+  <h2>🎹 Instrumentación</h2>
+  <div class="checkbox-grid" id="instrGrid">
+    <div class="checkbox-item"><input type="checkbox" value="guitarra acústica" id="i1"><label for="i1">Guitarra acústica</label></div>
+    <div class="checkbox-item"><input type="checkbox" value="guitarra eléctrica" id="i2"><label for="i2">Guitarra eléctrica</label></div>
+    <div class="checkbox-item"><input type="checkbox" value="piano" id="i3"><label for="i3">Piano</label></div>
+    <div class="checkbox-item"><input type="checkbox" value="órgano / teclado vintage" id="i4"><label for="i4">Órgano / teclado</label></div>
+    <div class="checkbox-item"><input type="checkbox" value="sección de cuerdas" id="i5"><label for="i5">Sección de cuerdas</label></div>
+    <div class="checkbox-item"><input type="checkbox" value="sección de bronces" id="i6"><label for="i6">Sección de bronces</label></div>
+    <div class="checkbox-item"><input type="checkbox" value="pads de sintetizador" id="i7"><label for="i7">Pads de sintetizador</label></div>
+    <div class="checkbox-item"><input type="checkbox" value="bajo prominente" id="i8"><label for="i8">Bajo prominente</label></div>
+    <div class="checkbox-item"><input type="checkbox" value="batería y percusión" id="i9"><label for="i9">Batería / percusión</label></div>
+    <div class="checkbox-item"><input type="checkbox" value="acordeón" id="i10"><label for="i10">Acordeón</label></div>
+    <div class="checkbox-item"><input type="checkbox" value="charango" id="i11"><label for="i11">Charango</label></div>
+    <div class="checkbox-item"><input type="checkbox" value="cajón peruano" id="i12"><label for="i12">Cajón peruano</label></div>
+  </div>
+</div>
+
+<!-- PRODUCCION -->
+<div class="section">
+  <h2>🎚️ Calidad de producción</h2>
+  <div class="checkbox-grid" id="prodGrid">
+    <div class="checkbox-item"><input type="checkbox" value="producción cálida y analógica" id="p1"><label for="p1">Cálida / analógica</label></div>
+    <div class="checkbox-item"><input type="checkbox" value="mezcla lista para radio" id="p2"><label for="p2">Radio-ready</label></div>
+    <div class="checkbox-item"><input type="checkbox" value="campo estéreo amplio" id="p3"><label for="p3">Estéreo amplio</label></div>
+    <div class="checkbox-item"><input type="checkbox" value="estética lo-fi" id="p4"><label for="p4">Lo-fi</label></div>
+    <div class="checkbox-item"><input type="checkbox" value="alta fidelidad de estudio" id="p5"><label for="p5">Alta fidelidad</label></div>
+    <div class="checkbox-item"><input type="checkbox" value="sensación de banda en vivo" id="p6"><label for="p6">Banda en vivo</label></div>
+    <div class="checkbox-item"><input type="checkbox" value="grabación íntima con micrófono cercano" id="p7"><label for="p7">Íntima / close-mic</label></div>
+    <div class="checkbox-item"><input type="checkbox" value="dinámica amplia entre versos y coro" id="p8"><label for="p8">Dinámica amplia</label></div>
+  </div>
+</div>
+
+<!-- EXTRA -->
+<div class="section">
+  <h2>✏️ Notas adicionales</h2>
+  <label class="field-label">Texto libre para agregar al final del prompt (opcional)</label>
+  <input type="text" id="extra" placeholder="Ej: inspirado en boleros de los 50, con acordeón melancólico">
+</div>
+
+<!-- OUTPUT -->
+<div class="section">
+  <h2>📋 Prompt ensamblado (campo Tags / Style de Udio)</h2>
+  <div class="output-box" id="output">— completa los campos de arriba —</div>
+  <div class="char-count" id="charCount">0 caracteres</div>
+  <div class="btn-row">
+    <button class="btn-copy" onclick="copiarPrompt()">Copiar</button>
+    <button class="btn-reset" onclick="reiniciar()">Reiniciar</button>
+  </div>
+  <div class="copied-msg" id="copiedMsg"></div>
+</div>
+
+<!-- NOTAS DEL FUNCIONAMIENTO -->
+<details>
+  <summary>📖 Notas sobre cómo funciona Udio</summary>
+  <div class="notes-text">
+    <p><strong>Formato del prompt:</strong> a diferencia de otros generadores que usan etiquetas entre corchetes para el estilo, Udio interpreta el campo de Tags como una lista de descriptores en lenguaje natural separados por comas. No hace falta sintaxis especial: mientras más específica y concreta sea cada frase (género + instrumentos + mood + producción), mejor interpreta el modelo la intención.</p>
+    <p><strong>Modo Custom:</strong> Udio separa el título, el estilo (Tags) y la letra en campos distintos. La letra sí admite etiquetas de estructura como [Verse] y [Chorus] — pero eso corresponde al campo de Lyrics, no al que arma esta herramienta.</p>
+    <p><strong>Extensión de pistas:</strong> si el resultado te gusta pero es corto, Udio permite extender la pista en incrementos manteniendo el mismo contexto musical (tono, tempo, estilo).</p>
+    <p><strong>Consejo:</strong> si un prompt muy cargado de adjetivos da resultados dispersos, prueba recortar a los 4-6 descriptores más importantes (género, instrumento clave, mood, producción) — el resto se puede ajustar extendiendo o regenerando.</p>
+  </div>
+</details>
+
+<!-- TABLA DE REFERENCIA -->
+<details>
+  <summary>🏷️ Tabla de referencia: descriptor → efecto</summary>
+  <table>
+    <tr><th>Descriptor</th><th>Efecto en el resultado</th></tr>
+    <tr><td>producción cálida y analógica</td><td>Suaviza agudos, da sensación de grabación en cinta</td></tr>
+    <tr><td>mezcla lista para radio</td><td>Más compresión, voz al frente, más pulido comercial</td></tr>
+    <tr><td>estética lo-fi</td><td>Menos brillo, textura más cruda/casera</td></tr>
+    <tr><td>grabación íntima con micrófono cercano</td><td>Voz más presente y cercana, menos reverb</td></tr>
+    <tr><td>dinámica amplia entre versos y coro</td><td>Fuerza contraste de energía entre secciones</td></tr>
+    <tr><td>voz con vibrato natural</td><td>Evita voces planas o robóticas</td></tr>
+    <tr><td>sensación de banda en vivo</td><td>Menos cuantización, imperfecciones naturales</td></tr>
+    <tr><td>campo estéreo amplio</td><td>Instrumentos más separados espacialmente</td></tr>
+  </table>
+</details>
+
+<script>
+function getChecked(gridId) {
+  const items = document.querySelectorAll('#' + gridId + ' input[type="checkbox"]:checked');
+  return Array.from(items).map(i => i.value);
+}
+
+function actualizarPrompt() {
+  const partes = [];
+
+  const genero = document.getElementById('genero').value.trim();
+  if (genero) partes.push(genero);
+
+  const epoca = document.getElementById('epoca').value;
+  if (epoca) partes.push(epoca);
+
+  const tipoVoz = document.getElementById('tipoVoz').value;
+  if (tipoVoz) partes.push(tipoVoz);
+
+  partes.push(...getChecked('estiloVocalGrid'));
+
+  const variante = document.getElementById('variante').value;
+  if (variante) partes.push(variante);
+
+  partes.push(...getChecked('moodGrid'));
+
+  const tempo = document.getElementById('tempo').value;
+  if (tempo) partes.push(tempo);
+
+  partes.push(...getChecked('instrGrid'));
+  partes.push(...getChecked('prodGrid'));
+
+  const extra = document.getElementById('extra').value.trim();
+  if (extra) partes.push(extra);
+
+  const resultado = partes.join(', ');
+  const outputEl = document.getElementById('output');
+  outputEl.textContent = resultado || '— completa los campos de arriba —';
+  document.getElementById('charCount').textContent = resultado.length + ' caracteres';
+}
+
+function copiarPrompt() {
+  const texto = document.getElementById('output').textContent;
+  if (!texto || texto.startsWith('—')) return;
+  navigator.clipboard.writeText(texto).then(() => {
+    const msg = document.getElementById('copiedMsg');
+    msg.textContent = '✓ Copiado al portapapeles';
+    setTimeout(() => { msg.textContent = ''; }, 2000);
+  }).catch(() => {
+    const msg = document.getElementById('copiedMsg');
+    msg.textContent = 'No se pudo copiar automáticamente, selecciona el texto manualmente.';
+  });
+}
+
+function reiniciar() {
+  document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+  document.querySelectorAll('select').forEach(s => s.value = '');
+  document.querySelectorAll('input[type="text"]').forEach(t => t.value = '');
+  actualizarPrompt();
+}
+
+document.querySelectorAll('input, select').forEach(el => {
+  el.addEventListener('input', actualizarPrompt);
+  el.addEventListener('change', actualizarPrompt);
+});
+
+actualizarPrompt();
+</script>
+
+</body>
+</html>
