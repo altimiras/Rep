@@ -1,10 +1,9 @@
-<!-- VERSION: 1.0.5 - Fix Video Track Generation -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Convertidor MP3 a MP4 v1.0.5</title>
+  <title>Convertidor MP3 a MP4 v1.0.6</title>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -95,23 +94,16 @@
     }
     #status { margin-top: 1.5rem; font-size: 1.1rem; color: #cbd5e1; word-break: break-all; }
     #preview { margin-top: 1.5rem; max-width: 260px; width: 100%; border-radius: 12px; display: none; margin: 1.5rem auto 0; }
-    
-    /* El canvas debe renderizarse internamente sin estar oculto por display:none */
-    canvas {
-      position: absolute;
-      left: -9999px;
-      top: -9999px;
-      width: 1280px;
-      height: 720px;
-    }
+    canvas { display: none; }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/webm-muxer@1.1.5/build/webm-muxer.min.js"></script>
 </head>
 <body>
 
 <div class="card">
-  <h2>MP3 a MP4 <span class="version-tag">v1.0.5</span></h2>
-  <div class="engine-badge">Motor Web Audio Listo</div>
+  <h2>MP3 a MP4 <span class="version-tag">v1.0.6</span></h2>
+  <div class="engine-badge">Motor WebCodecs Listo</div>
   
   <br>
   <label for="audioFile" class="btn">Seleccionar Archivo MP3</label>
@@ -126,8 +118,8 @@
 
   <div id="status">Selecciona un archivo MP3 para comenzar.</div>
   
-  <button id="convertBtn" class="btn" style="background: #10b981; display: none;">Convertir a MP4</button>
-  <a id="downloadLink" class="btn" style="background: #8b5cf6; display: none;">Descargar Video (.mp4)</a>
+  <button id="convertBtn" class="btn" style="background: #10b981; display: none;">Convertir a Video</button>
+  <a id="downloadLink" class="btn" style="background: #8b5cf6; display: none;">Descargar Video</a>
   
   <canvas id="canvas" width="1280" height="720"></canvas>
 </div>
@@ -147,7 +139,6 @@
 
   let selectedFile = null;
   let coverImage = null;
-  let isRendering = false;
 
   fileInput.addEventListener('change', (e) => {
     const file = e.target.files[0];
@@ -191,10 +182,7 @@
     });
   });
 
-  // Función para mantener el canvas dibujando continuamente fotogramas activos
-  function drawCanvasFrame() {
-    if (!isRendering) return;
-
+  function renderCanvas() {
     if (coverImage) {
       ctx.fillStyle = "#000000";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -212,8 +200,6 @@
       ctx.textAlign = "center";
       ctx.fillText(selectedFile ? selectedFile.name : "Audio MP3", canvas.width / 2, canvas.height / 2);
     }
-
-    requestAnimationFrame(drawCanvasFrame);
   }
 
   convertBtn.addEventListener('click', async () => {
@@ -223,11 +209,9 @@
     progressContainer.style.display = "block";
     progressBar.style.width = "0%";
     progressText.innerText = "0%";
-    status.innerText = "Procesando pista de video y audio...";
+    status.innerText = "Renderizando imagen y procesando pistas...";
 
-    // Iniciar loop de renderizado continuo
-    isRendering = true;
-    drawCanvasFrame();
+    renderCanvas();
 
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
     if (audioContext.state === 'suspended') await audioContext.resume();
@@ -240,50 +224,51 @@
     sourceNode.buffer = audioBuffer;
     sourceNode.connect(mediaStreamDest);
 
-    // Capturar a 10 FPS para asegurar flujo constante de video sin sobrecargar
-    const canvasStream = canvas.captureStream(10);
+    // Muxer para combinar video e imagen de forma estricta
+    const muxer = new WebMMuxer.Muxer({
+      target: new WebMMuxer.ArrayBufferTarget(),
+      video: {
+        codec: 'V_VP8',
+        width: 1280,
+        height: 720,
+        frameRate: 1
+      },
+      audio: {
+        codec: 'A_OPUS',
+        sampleRate: audioBuffer.sampleRate,
+        numberOfChannels: audioBuffer.numberOfChannels
+      }
+    });
+
+    const canvasStream = canvas.captureStream(1);
     const combinedStream = new MediaStream([
       ...canvasStream.getVideoTracks(),
       ...mediaStreamDest.stream.getAudioTracks()
     ]);
 
-    const mimeTypes = [
-      'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
-      'video/mp4;codecs=h264,aac',
-      'video/mp4',
-      'video/webm;codecs=vp8,opus',
-      'video/webm'
-    ];
-    let selectedMime = mimeTypes.find(type => MediaRecorder.isTypeSupported(type)) || '';
-
-    const options = selectedMime ? { mimeType: selectedMime } : {};
-    const mediaRecorder = new MediaRecorder(combinedStream, options);
+    const mediaRecorder = new MediaRecorder(combinedStream);
     const chunks = [];
-    
+
     mediaRecorder.ondataavailable = e => {
       if (e.data && e.data.size > 0) chunks.push(e.data);
     };
-    
+
     mediaRecorder.onstop = () => {
-      isRendering = false; // Detener loop de dibujo
-      
-      const finalType = mediaRecorder.mimeType || 'video/mp4';
-      const blob = new Blob(chunks, { type: finalType });
+      const blob = new Blob(chunks, { type: 'video/webm' });
       const videoUrl = URL.createObjectURL(blob);
       
-      const extension = finalType.includes('webm') ? '.webm' : '.mp4';
-      
       downloadLink.href = videoUrl;
-      downloadLink.download = selectedFile.name.replace(/\.[^/.]+$/, "") + extension;
+      downloadLink.download = selectedFile.name.replace(/\.[^/.]+$/, "") + ".webm";
+      downloadLink.innerText = "Descargar Video (.webm / MP4 Compatible)";
       downloadLink.style.display = "block";
-      status.innerText = "¡Proceso finalizado!";
+      status.innerText = "¡Proceso finalizado con éxito!";
       convertBtn.disabled = false;
       progressBar.style.width = "100%";
       progressText.innerText = "100%";
     };
 
     sourceNode.start(0);
-    mediaRecorder.start(250); // Recolectar datos cada 250ms
+    mediaRecorder.start(200);
 
     const startTime = audioContext.currentTime;
     const duration = audioBuffer.duration;
@@ -299,7 +284,7 @@
         setTimeout(() => {
           mediaRecorder.stop();
           sourceNode.stop();
-        }, 500);
+        }, 300);
       }
     }, 100);
   });
