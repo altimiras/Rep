@@ -322,6 +322,9 @@ async function initFFmpeg() {
     ffmpeg = createFFmpeg({
       log: false,
       corePath: 'https://unpkg.com/@ffmpeg/core@0.10.0/dist/ffmpeg-core.js',
+      logger: ({ type, message }) => {
+        if (message && message.trim()) log(`[ffmpeg] ${message}`);
+      },
       progress: (p) => {
         if (p.ratio >= 0 && p.ratio <= 1) {
           const pct = Math.round(p.ratio * 100);
@@ -459,6 +462,8 @@ processBtn.addEventListener('click', async () => {
     `);
 
   } catch (err) {
+    diagBox.style.display = 'block';
+    document.getElementById('diagArrow').textContent = '▲';
     progressFill.classList.remove('indeterminate');
     progressLabel.textContent = 'Error';
     log('ERROR durante el procesamiento: ' + err.message);
