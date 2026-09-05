@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Convertidor MP3 a MP4 v1.0.6</title>
+  <title>Convertidor MP3 a MP4 v1.0.9</title>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -63,9 +63,10 @@
       font-size: 1rem;
       font-weight: bold;
       margin-bottom: 1.5rem;
-      background: #065f46;
-      color: #34d399;
+      background: #374151;
+      color: #9ca3af;
     }
+    .engine-badge.ready { background: #065f46; color: #34d399; }
     .progress-container {
       width: 100%;
       background-color: #374151;
@@ -80,7 +81,7 @@
       width: 0%;
       height: 100%;
       background-color: #10b981;
-      transition: width 0.1s linear;
+      transition: width 0.2s linear;
     }
     .progress-text {
       position: absolute;
@@ -97,16 +98,15 @@
     canvas { display: none; }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/webm-muxer@1.1.5/build/webm-muxer.min.js"></script>
 </head>
 <body>
 
 <div class="card">
-  <h2>MP3 a MP4 <span class="version-tag">v1.0.6</span></h2>
-  <div class="engine-badge">Motor WebCodecs Listo</div>
+  <h2>MP3 a MP4 <span class="version-tag">v1.0.9</span></h2>
+  <div id="engineStatus" class="engine-badge">Cargando motor MP4...</div>
   
   <br>
-  <label for="audioFile" class="btn">Seleccionar Archivo MP3</label>
+  <label for="audioFile" id="fileLabel" class="btn" style="opacity: 0.5; pointer-events: none;">Seleccionar Archivo MP3</label>
   <input type="file" id="audioFile" accept="audio/mp3, audio/*">
   
   <img id="preview" alt="Carátula detectada">
@@ -116,16 +116,22 @@
     <div class="progress-text" id="progressText">0%</div>
   </div>
 
-  <div id="status">Selecciona un archivo MP3 para comenzar.</div>
+  <div id="status">Cargando componentes de video...</div>
   
-  <button id="convertBtn" class="btn" style="background: #10b981; display: none;">Convertir a Video</button>
-  <a id="downloadLink" class="btn" style="background: #8b5cf6; display: none;">Descargar Video</a>
+  <button id="convertBtn" class="btn" style="background: #10b981; display: none;">Convertir a MP4</button>
+  <a id="downloadLink" class="btn" style="background: #8b5cf6; display: none;">Descargar Video (.mp4)</a>
   
-  <canvas id="canvas" width="1280" height="720"></canvas>
+  <canvas id="canvas" width="1920" height="1080"></canvas>
 </div>
 
-<script>
+<script type="module">
+  import { createFFmpeg, fetchFile } from 'https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js';
+
   const jsMediaTags = window.jsmediatags;
+  const ffmpeg = createFFmpeg({ log: false });
+
+  const engineStatus = document.getElementById('engineStatus');
+  const fileLabel = document.getElementById('fileLabel');
   const fileInput = document.getElementById('audioFile');
   const status = document.getElementById('status');
   const convertBtn = document.getElementById('convertBtn');
@@ -139,6 +145,22 @@
 
   let selectedFile = null;
   let coverImage = null;
+
+  window.addEventListener('load', async () => {
+    try {
+      status.innerText = "Inicializando motor de renderizado MP4...";
+      await ffmpeg.load();
+      engineStatus.innerText = "Motor MP4 Listo";
+      engineStatus.className = "engine-badge ready";
+      status.innerText = "Selecciona un archivo MP3 para comenzar.";
+      fileLabel.style.opacity = "1";
+      fileLabel.style.pointerEvents = "auto";
+    } catch (err) {
+      console.error(err);
+      engineStatus.innerText = "Error de motor";
+      status.innerText = "Tu navegador no permite la aceleración MP4 local.";
+    }
+  });
 
   fileInput.addEventListener('change', (e) => {
     const file = e.target.files[0];
@@ -166,12 +188,12 @@
           coverImage.onload = () => {
             preview.src = base64;
             preview.style.display = "block";
-            status.innerText = "Carátula detectada. Listo para convertir.";
+            status.innerText = "Carátula detectada. Listo para convertir a MP4.";
             convertBtn.style.display = "block";
           };
           coverImage.src = base64;
         } else {
-          status.innerText = "Sin carátula integrada. Se creará con fondo sólido.";
+          status.innerText = "Sin carátula integrada. Se creará MP4 con fondo oscuro.";
           convertBtn.style.display = "block";
         }
       },
@@ -182,21 +204,33 @@
     });
   });
 
-  function renderCanvas() {
+  function renderImageToCanvas() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     if (coverImage) {
-      ctx.fillStyle = "#000000";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.save();
+      ctx.filter = "blur(50px) brightness(0.5)";
+      const bgScale = Math.max(canvas.width / coverImage.width, canvas.height / coverImage.height);
+      const bgW = coverImage.width * bgScale;
+      const bgH = coverImage.height * bgScale;
+      ctx.drawImage(coverImage, (canvas.width - bgW) / 2, (canvas.height - bgH) / 2, bgW, bgH);
+      ctx.restore();
+
       const scale = Math.min(canvas.width / coverImage.width, canvas.height / coverImage.height);
       const w = coverImage.width * scale;
       const h = coverImage.height * scale;
       const x = (canvas.width - w) / 2;
       const y = (canvas.height - h) / 2;
+
+      ctx.save();
+      ctx.shadowColor = "rgba(0, 0, 0, 0.8)";
+      ctx.shadowBlur = 40;
       ctx.drawImage(coverImage, x, y, w, h);
+      ctx.restore();
     } else {
-      ctx.fillStyle = "#1e293b";
+      ctx.fillStyle = "#0f172a";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.fillStyle = "#ffffff";
-      ctx.font = "36px sans-serif";
+      ctx.font = "bold 48px sans-serif";
       ctx.textAlign = "center";
       ctx.fillText(selectedFile ? selectedFile.name : "Audio MP3", canvas.width / 2, canvas.height / 2);
     }
@@ -209,84 +243,52 @@
     progressContainer.style.display = "block";
     progressBar.style.width = "0%";
     progressText.innerText = "0%";
-    status.innerText = "Renderizando imagen y procesando pistas...";
+    status.innerText = "Generando estructura del contenedor MP4...";
 
-    renderCanvas();
+    renderImageToCanvas();
 
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    if (audioContext.state === 'suspended') await audioContext.resume();
+    // Exportar el canvas como una imagen JPEG estática para FFmpeg
+    const canvasDataUrl = canvas.toDataURL('image/jpeg', 0.95);
+    const imageBlob = await (await fetch(canvasDataUrl)).blob();
 
-    const arrayBuffer = await selectedFile.arrayBuffer();
-    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+    // Cargar archivos al sistema de archivos virtual de FFmpeg
+    ffmpeg.FS('writeFile', 'image.jpg', await fetchFile(imageBlob));
+    ffmpeg.FS('writeFile', 'audio.mp3', await fetchFile(selectedFile));
 
-    const mediaStreamDest = audioContext.createMediaStreamDestination();
-    const sourceNode = audioContext.createBufferSource();
-    sourceNode.buffer = audioBuffer;
-    sourceNode.connect(mediaStreamDest);
-
-    // Muxer para combinar video e imagen de forma estricta
-    const muxer = new WebMMuxer.Muxer({
-      target: new WebMMuxer.ArrayBufferTarget(),
-      video: {
-        codec: 'V_VP8',
-        width: 1280,
-        height: 720,
-        frameRate: 1
-      },
-      audio: {
-        codec: 'A_OPUS',
-        sampleRate: audioBuffer.sampleRate,
-        numberOfChannels: audioBuffer.numberOfChannels
-      }
-    });
-
-    const canvasStream = canvas.captureStream(1);
-    const combinedStream = new MediaStream([
-      ...canvasStream.getVideoTracks(),
-      ...mediaStreamDest.stream.getAudioTracks()
-    ]);
-
-    const mediaRecorder = new MediaRecorder(combinedStream);
-    const chunks = [];
-
-    mediaRecorder.ondataavailable = e => {
-      if (e.data && e.data.size > 0) chunks.push(e.data);
-    };
-
-    mediaRecorder.onstop = () => {
-      const blob = new Blob(chunks, { type: 'video/webm' });
-      const videoUrl = URL.createObjectURL(blob);
-      
-      downloadLink.href = videoUrl;
-      downloadLink.download = selectedFile.name.replace(/\.[^/.]+$/, "") + ".webm";
-      downloadLink.innerText = "Descargar Video (.webm / MP4 Compatible)";
-      downloadLink.style.display = "block";
-      status.innerText = "¡Proceso finalizado con éxito!";
-      convertBtn.disabled = false;
-      progressBar.style.width = "100%";
-      progressText.innerText = "100%";
-    };
-
-    sourceNode.start(0);
-    mediaRecorder.start(200);
-
-    const startTime = audioContext.currentTime;
-    const duration = audioBuffer.duration;
-
-    const interval = setInterval(() => {
-      const elapsed = audioContext.currentTime - startTime;
-      const percent = Math.min(Math.round((elapsed / duration) * 100), 100);
+    ffmpeg.setProgress(({ ratio }) => {
+      const percent = Math.min(Math.max(Math.round(ratio * 100), 0), 100);
       progressBar.style.width = `${percent}%`;
       progressText.innerText = `${percent}%`;
+    });
 
-      if (elapsed >= duration) {
-        clearInterval(interval);
-        setTimeout(() => {
-          mediaRecorder.stop();
-          sourceNode.stop();
-        }, 300);
-      }
-    }, 100);
+    status.innerText = "Codificando archivo MP4 (H.264/AAC)...";
+
+    // Comando nativo de FFmpeg para ensamblar MP4 sin re-codificar innecesariamente el audio
+    await ffmpeg.run(
+      '-loop', '1',
+      '-i', 'image.jpg',
+      '-i', 'audio.mp3',
+      '-c:v', 'libx264',
+      '-tune', 'stillimage',
+      '-c:a', 'aac',
+      '-b:a', '192k',
+      '-pix_fmt', 'yuv420p',
+      '-shortest',
+      'output.mp4'
+    );
+
+    const data = ffmpeg.FS('readFile', 'output.mp4');
+    const mp4Url = URL.createObjectURL(new Blob([data.buffer], { type: 'video/mp4' }));
+
+    downloadLink.href = mp4Url;
+    downloadLink.download = selectedFile.name.replace(/\.[^/.]+$/, "") + ".mp4";
+    downloadLink.innerText = "Descargar Archivo (.mp4)";
+    downloadLink.style.display = "block";
+    
+    status.innerText = "¡Conversión finalizada! Archivo .mp4 listo.";
+    convertBtn.disabled = false;
+    progressBar.style.width = "100%";
+    progressText.innerText = "100%";
   });
 </script>
 
