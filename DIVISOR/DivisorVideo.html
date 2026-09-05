@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Divisor de Video para Estados</title>
+<script src="coi-serviceworker.js"></script>
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #1a1d24;
+    --accent: #25d366;
+    --accent-dark: #1da851;
+    --text: #eef1f5;
+    --muted: #9aa3af;
+    --border: #2a2e37;
+    --error: #e5484d;
+    --warn: #e5a244;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 16px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, Roboto, "Segoe UI", sans-serif;
+    line-height: 1.4;
+  }
+  h1 {
+    font-size: 1.3rem;
+    margin: 0 0 4px 0;
+  }
+  .subtitle {
+    color: var(--muted);
+    font-size: 0.85rem;
+    margin-bottom: 20px;
+  }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  input[type="file"] {
+    width: 100%;
+    padding: 10px;
+    background: #11131a;
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 0.9rem;
+  }
+  input[type="number"] {
+    width: 100%;
+    padding: 10px;
+    background: #11131a;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 1rem;
+  }
+  .row {
+    display: flex;
+    gap: 12px;
+  }
+  .row > div { flex: 1; }
+  button {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 10px;
+    background: var(--accent);
+    color: #04210f;
+    font-weight: 600;
+    font-size: 1rem;
+    margin-top: 14px;
+    cursor: pointer;
+  }
+  button:active { background: var(--accent-dark); }
+  button:disabled {
+    background: #3a3f4a;
+    color: var(--muted);
+    cursor: not-allowed;
+  }
+  .info-line {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-top: 8px;
+  }
+  #videoPreview {
+    width: 100%;
+    border-radius: 10px;
+    margin-top: 12px;
+    display: none;
+    background: #000;
+  }
+  .progress-wrap {
+    display: none;
+    margin-top: 16px;
+  }
+  .progress-bar-bg {
+    width: 100%;
+    height: 20px;
+    background: #11131a;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .progress-bar-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--accent);
+    transition: width 0.2s;
+  }
+  .progress-bar-fill.indeterminate {
+    width: 40% !important;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    animation: indet 1.1s ease-in-out infinite;
+  }
+  @keyframes indet {
+    0%   { margin-left: -40%; }
+    100% { margin-left: 100%; }
+  }
+  .spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255,255,255,0.25);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-right: 8px;
+    vertical-align: middle;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .progress-text {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-top: 6px;
+  }
+  #diagBox {
+    font-family: monospace;
+    font-size: 0.72rem;
+    color: #7d8590;
+    background: #0b0c10;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px;
+    max-height: 160px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+    margin-top: 12px;
+  }
+  .diag-title {
+    font-size: 0.78rem;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+  }
+  .status-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    font-weight: 600;
+  }
+  .status-ok { background: rgba(37,211,102,0.15); color: var(--accent); }
+  .status-wait { background: rgba(229,162,68,0.15); color: var(--warn); }
+  .status-err { background: rgba(229,72,77,0.15); color: var(--error); }
+  #results { margin-top: 16px; }
+  .clip-card {
+    background: #11131a;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+  }
+  .clip-info { font-size: 0.85rem; }
+  .clip-info b { color: var(--text); }
+  .clip-info span { display: block; color: var(--muted); font-size: 0.75rem; }
+  .dl-btn {
+    background: var(--accent);
+    color: #04210f;
+    text-decoration: none;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    white-space: nowrap;
+    margin: 0;
+    width: auto;
+    display: inline-block;
+  }
+  .hint {
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+  }
+</style>
+</head>
+<body>
+
+<h1>✂️ Divisor de Video para Estados</h1>
+<div class="subtitle">Corta un video largo en tramos listos para publicar en secuencia — funciona sin conexión, todo se procesa en tu celular.</div>
+
+<div class="panel" id="loadBanner">
+  <span class="spinner"></span><span id="loadBannerText">Cargando motor de video (puede tardar unos segundos la primera vez)…</span>
+</div>
+
+<div class="panel">
+  <label for="fileInput">1. Elige el video</label>
+  <input type="file" id="fileInput" accept="video/*">
+  <video id="videoPreview" controls></video>
+  <div class="info-line" id="fileInfo"></div>
+</div>
+
+<div class="panel">
+  <div class="row">
+    <div>
+      <label for="segLength">2. Duración de cada tramo (segundos)</label>
+      <input type="number" id="segLength" value="30" min="5" max="90" step="1">
+    </div>
+  </div>
+  <div class="info-line" id="estimateInfo">Elige un video para ver cuántos tramos se generarán.</div>
+
+  <button id="processBtn" disabled>Cortar video</button>
+
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressFill"></div></div>
+    <div class="progress-text">
+      <span id="progressLabel">Preparando…</span>
+      <span id="progressPct">0%</span>
+    </div>
+  </div>
+</div>
+
+<div id="results"></div>
+
+<div class="panel">
+  <div class="diag-title" onclick="toggleDiag()">
+    <span>Diagnóstico técnico <span id="diagStatus" class="status-badge status-wait">cargando…</span></span>
+    <span id="diagArrow">▼</span>
+  </div>
+  <div id="diagBox" style="display:none;"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
+<script src="https://unpkg.com/@ffmpeg/ffmpeg@0.10.1/dist/ffmpeg.min.js"></script>
+<script>
+const { createFFmpeg, fetchFile } = FFmpeg;
+let ffmpeg = null;
+let ffmpegReady = false;
+let selectedFile = null;
+let videoDuration = 0;
+
+const diagBox = document.getElementById('diagBox');
+const diagStatus = document.getElementById('diagStatus');
+const fileInput = document.getElementById('fileInput');
+const videoPreview = document.getElementById('videoPreview');
+const fileInfo = document.getElementById('fileInfo');
+const segLength = document.getElementById('segLength');
+const estimateInfo = document.getElementById('estimateInfo');
+const processBtn = document.getElementById('processBtn');
+const progressWrap = document.getElementById('progressWrap');
+const progressFill = document.getElementById('progressFill');
+const progressLabel = document.getElementById('progressLabel');
+const progressPct = document.getElementById('progressPct');
+const resultsDiv = document.getElementById('results');
+
+function log(msg) {
+  const time = new Date().toLocaleTimeString();
+  diagBox.textContent += `[${time}] ${msg}\n`;
+  diagBox.scrollTop = diagBox.scrollHeight;
+}
+
+function toggleDiag() {
+  const visible = diagBox.style.display !== 'none';
+  diagBox.style.display = visible ? 'none' : 'block';
+  document.getElementById('diagArrow').textContent = visible ? '▼' : '▲';
+}
+
+function setDiagStatus(text, cls) {
+  diagStatus.textContent = text;
+  diagStatus.className = 'status-badge ' + cls;
+}
+
+async function initFFmpeg() {
+  log('Verificando aislamiento cross-origin (crossOriginIsolated: ' + window.crossOriginIsolated + ')');
+
+  if (!window.crossOriginIsolated) {
+    log('Aislamiento aún no activo. El service worker necesita 2-3 recargas la primera vez.');
+    setDiagStatus('recarga necesaria', 'status-wait');
+    const banner = document.getElementById('loadBanner');
+    banner.innerHTML = `
+      <div style="margin-bottom:10px;">⏳ <b>Preparando por primera vez.</b> Es normal: hay que recargar la página 2 o 3 veces para activar el modo necesario. No es un error, solo toma un momento.</div>
+      <button id="reloadNowBtn" style="margin-top:0;">Recargar ahora</button>
+    `;
+    document.getElementById('reloadNowBtn').addEventListener('click', () => window.location.reload());
+    return;
+  }
+
+  try {
+    ffmpeg = createFFmpeg({
+      log: false,
+      corePath: 'https://unpkg.com/@ffmpeg/core@0.10.0/dist/ffmpeg-core.js',
+      progress: (p) => {
+        if (p.ratio >= 0 && p.ratio <= 1) {
+          const pct = Math.round(p.ratio * 100);
+          progressFill.style.width = pct + '%';
+          progressPct.textContent = pct + '%';
+        }
+      }
+    });
+    log('Cargando núcleo ffmpeg.wasm (puede tardar la primera vez)…');
+    await ffmpeg.load();
+    ffmpegReady = true;
+    log('ffmpeg.wasm listo.');
+    setDiagStatus('listo', 'status-ok');
+    document.getElementById('loadBanner').style.display = 'none';
+    if (selectedFile) processBtn.disabled = false;
+  } catch (err) {
+    log('ERROR al cargar ffmpeg: ' + err.message);
+    setDiagStatus('error', 'status-err');
+    const banner = document.getElementById('loadBanner');
+    banner.querySelector('.spinner').style.display = 'none';
+    document.getElementById('loadBannerText').textContent = 'No se pudo cargar el motor de video. Revisa el diagnóstico técnico abajo.';
+    banner.style.background = 'rgba(229,72,77,0.1)';
+  }
+}
+
+fileInput.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  selectedFile = file;
+  const url = URL.createObjectURL(file);
+  videoPreview.src = url;
+  videoPreview.style.display = 'block';
+  fileInfo.textContent = `Archivo: ${file.name} — ${(file.size / (1024*1024)).toFixed(1)} MB`;
+  log(`Video seleccionado: ${file.name} (${(file.size/1024/1024).toFixed(2)} MB)`);
+
+  videoPreview.onloadedmetadata = () => {
+    videoDuration = videoPreview.duration;
+    updateEstimate();
+    log(`Duración detectada: ${videoDuration.toFixed(1)} segundos`);
+  };
+
+  if (ffmpegReady) processBtn.disabled = false;
+});
+
+segLength.addEventListener('input', updateEstimate);
+
+function updateEstimate() {
+  if (!videoDuration) return;
+  const seg = parseFloat(segLength.value) || 30;
+  const parts = Math.ceil(videoDuration / seg);
+  estimateInfo.textContent = `Se generarán aproximadamente ${parts} tramo(s) de hasta ${seg}s, a partir de un video de ${videoDuration.toFixed(0)}s.`;
+}
+
+processBtn.addEventListener('click', async () => {
+  if (!selectedFile || !ffmpegReady) return;
+  processBtn.disabled = true;
+  resultsDiv.innerHTML = '';
+  progressWrap.style.display = 'block';
+  progressLabel.textContent = 'Cargando video en memoria…';
+  progressPct.textContent = '';
+  progressFill.classList.add('indeterminate');
+
+  const seg = parseFloat(segLength.value) || 30;
+  const inputName = 'input_video.mp4';
+  const outPattern = 'clip_%03d.mp4';
+
+  try {
+    log('Escribiendo archivo de entrada en el sistema virtual de ffmpeg…');
+    ffmpeg.FS('writeFile', inputName, await fetchFile(selectedFile));
+
+    progressLabel.textContent = 'Cortando en tramos (sin recodificar, más rápido)…';
+    progressFill.classList.add('indeterminate');
+    log(`Ejecutando corte por segmentos de ${seg}s usando -c copy…`);
+
+    // -c copy: corte rápido sin recodificar, preciso en la mayoría de videos MP4/H.264
+    await ffmpeg.run(
+      '-i', inputName,
+      '-c', 'copy',
+      '-map', '0',
+      '-segment_time', String(seg),
+      '-f', 'segment',
+      '-reset_timestamps', '1',
+      outPattern
+    );
+
+    log('Corte completado. Leyendo archivos generados…');
+    const files = ffmpeg.FS('readdir', '/').filter(f => f.startsWith('clip_') && f.endsWith('.mp4'));
+    files.sort();
+
+    if (files.length === 0) {
+      throw new Error('No se generó ningún tramo. El video podría tener un formato no compatible con corte sin recodificar.');
+    }
+
+    log(`${files.length} tramo(s) generado(s): ${files.join(', ')}`);
+    resultsDiv.innerHTML = `<div class="panel"><b>${files.length} tramo(s) listos.</b> Descárgalos en orden y súbelos a tu estado uno tras otro.</div>`;
+
+    files.forEach((fname, idx) => {
+      const data = ffmpeg.FS('readFile', fname);
+      const blob = new Blob([data.buffer], { type: 'video/mp4' });
+      const url = URL.createObjectURL(blob);
+      const sizeMB = (blob.size / (1024*1024)).toFixed(1);
+
+      const card = document.createElement('div');
+      card.className = 'clip-card';
+      card.innerHTML = `
+        <div class="clip-info">
+          <b>Parte ${idx + 1}</b>
+          <span>${sizeMB} MB</span>
+        </div>
+        <a class="dl-btn" download="parte_${String(idx+1).padStart(2,'0')}.mp4" href="${url}">Descargar</a>
+      `;
+      resultsDiv.appendChild(card);
+
+      ffmpeg.FS('unlink', fname);
+    });
+
+    ffmpeg.FS('unlink', inputName);
+    progressFill.classList.remove('indeterminate');
+    progressLabel.textContent = 'Completado';
+    progressFill.style.width = '100%';
+    progressPct.textContent = '100%';
+
+    resultsDiv.insertAdjacentHTML('beforeend', `
+      <div class="panel hint">
+        Descarga cada parte tocando "Descargar" (se guardan en tu carpeta de Descargas).
+        Luego súbelas a Estados de WhatsApp en orden: Parte 1, Parte 2, etc.
+      </div>
+    `);
+
+  } catch (err) {
+    progressFill.classList.remove('indeterminate');
+    progressLabel.textContent = 'Error';
+    log('ERROR durante el procesamiento: ' + err.message);
+    resultsDiv.innerHTML = `<div class="panel" style="color:var(--error)">
+      Ocurrió un error: ${err.message}<br><br>
+      Sugerencia: si el video no viene de la cámara del celular en MP4/H.264 estándar,
+      prueba convertirlo primero (por ejemplo reproduciéndolo y re-guardándolo), o dime
+      el formato exacto y ajusto la herramienta para recodificar en vez de copiar.
+    </div>`;
+  } finally {
+    processBtn.disabled = false;
+  }
+});
+
+initFFmpeg();
+</script>
+
+</body>
+</html>
