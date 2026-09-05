@@ -219,7 +219,7 @@
 </head>
 <body>
 
-<h1>✂️ Divisor de Video para Estados</h1>
+<h1>✂️ Divisor de Video para Estados <span style="font-size:0.6em; color:var(--muted); font-weight:400;">v1.1</span></h1>
 <div class="subtitle">Corta un video largo en tramos listos para publicar en secuencia — funciona sin conexión, todo se procesa en tu celular.</div>
 
 <div class="panel" id="loadBanner">
@@ -412,8 +412,11 @@ processBtn.addEventListener('click', async () => {
 
       log(`Procesando parte ${i + 1}/${totalSegments} (inicio: ${start.toFixed(1)}s, duración: ${seg}s)…`);
 
-      await ffmpeg.run(
-        '-ss', String(start),
+      const runArgs = [];
+      if (start > 0) {
+        runArgs.push('-ss', String(start));
+      }
+      runArgs.push(
         '-i', inputName,
         '-t', String(seg),
         '-map', '0',
@@ -425,6 +428,8 @@ processBtn.addEventListener('click', async () => {
         '-avoid_negative_ts', 'make_zero',
         outName
       );
+
+      await ffmpeg.run(...runArgs);
 
       let data;
       try {
