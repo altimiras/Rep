@@ -414,7 +414,7 @@ processBtn.addEventListener('click', async () => {
 
       const runArgs = (segStart) => {
         const args = [];
-        if (segStart > 0) args.push('-ss', String(segStart));
+        args.push('-ss', String(segStart));
         args.push(
           '-i', inputName,
           '-t', String(seg),
@@ -425,6 +425,7 @@ processBtn.addEventListener('click', async () => {
           '-c:a', 'aac',
           '-b:a', '128k',
           '-avoid_negative_ts', 'make_zero',
+          '-max_interleave_delta', '0',
           outName
         );
         return args;
