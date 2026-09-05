@@ -389,67 +389,86 @@ processBtn.addEventListener('click', async () => {
 
   const seg = parseFloat(segLength.value) || 30;
   const inputName = 'input_video.mp4';
-  const outPattern = 'clip_%03d.mp4';
+  const totalSegments = Math.max(1, Math.ceil(videoDuration / seg));
 
   try {
     log('Escribiendo archivo de entrada en el sistema virtual de ffmpeg…');
     ffmpeg.FS('writeFile', inputName, await fetchFile(selectedFile));
 
-    progressLabel.textContent = 'Cortando en tramos exactos (recodificando, puede tardar)…';
-    progressFill.classList.add('indeterminate');
-    log(`Ejecutando corte por segmentos de ${seg}s con keyframes forzados (corte preciso)…`);
+    log(`Video de ${videoDuration.toFixed(1)}s → se generarán ${totalSegments} tramo(s) de hasta ${seg}s, uno por uno.`);
+    progressFill.classList.remove('indeterminate');
 
-    // Recodifica y fuerza un keyframe exacto en cada punto de corte,
-    // para que el segmento muxer pueda dividir en el segundo exacto
-    // en vez de depender de los keyframes originales del video.
-    await ffmpeg.run(
-      '-i', inputName,
-      '-map', '0',
-      '-c:v', 'libx264',
-      '-preset', 'ultrafast',
-      '-crf', '23',
-      '-force_key_frames', `expr:gte(t,n_forced*${seg})`,
-      '-c:a', 'aac',
-      '-b:a', '128k',
-      '-segment_time', String(seg),
-      '-f', 'segment',
-      '-reset_timestamps', '1',
-      outPattern
-    );
+    resultsDiv.innerHTML = '';
+    const clipBlobs = [];
 
-    log('Corte completado. Leyendo archivos generados…');
-    const files = ffmpeg.FS('readdir', '/').filter(f => f.startsWith('clip_') && f.endsWith('.mp4'));
-    files.sort();
+    for (let i = 0; i < totalSegments; i++) {
+      const start = i * seg;
+      const outName = `clip_${String(i + 1).padStart(3, '0')}.mp4`;
 
-    if (files.length === 0) {
-      throw new Error('No se generó ningún tramo. El video podría tener un formato no compatible con corte sin recodificar.');
+      progressLabel.textContent = `Cortando parte ${i + 1} de ${totalSegments}…`;
+      const pct = Math.round((i / totalSegments) * 100);
+      progressFill.style.width = pct + '%';
+      progressPct.textContent = pct + '%';
+
+      log(`Procesando parte ${i + 1}/${totalSegments} (inicio: ${start.toFixed(1)}s, duración: ${seg}s)…`);
+
+      await ffmpeg.run(
+        '-ss', String(start),
+        '-i', inputName,
+        '-t', String(seg),
+        '-map', '0',
+        '-c:v', 'libx264',
+        '-preset', 'ultrafast',
+        '-crf', '23',
+        '-c:a', 'aac',
+        '-b:a', '128k',
+        '-avoid_negative_ts', 'make_zero',
+        outName
+      );
+
+      let data;
+      try {
+        data = ffmpeg.FS('readFile', outName);
+      } catch (readErr) {
+        log(`Parte ${i + 1}: no se generó archivo de salida (${readErr.message}). Se omite.`);
+        continue;
+      }
+
+      if (!data || data.length === 0) {
+        log(`Parte ${i + 1}: archivo vacío, se omite.`);
+        continue;
+      }
+
+      clipBlobs.push({ index: i + 1, data: data.slice() });
+      ffmpeg.FS('unlink', outName);
+      log(`Parte ${i + 1} lista (${(data.length / 1024 / 1024).toFixed(2)} MB).`);
     }
 
-    log(`${files.length} tramo(s) generado(s): ${files.join(', ')}`);
-    resultsDiv.innerHTML = `<div class="panel"><b>${files.length} tramo(s) listos.</b> Descárgalos en orden y súbelos a tu estado uno tras otro.</div>`;
+    ffmpeg.FS('unlink', inputName);
 
-    files.forEach((fname, idx) => {
-      const data = ffmpeg.FS('readFile', fname);
+    if (clipBlobs.length === 0) {
+      throw new Error('No se generó ningún tramo. Revisa el diagnóstico técnico para más detalle.');
+    }
+
+    resultsDiv.innerHTML = `<div class="panel"><b>${clipBlobs.length} tramo(s) listos.</b> Descárgalos en orden y súbelos a tu estado uno tras otro.</div>`;
+
+    clipBlobs.forEach(({ index, data }) => {
       const blob = new Blob([data.buffer], { type: 'video/mp4' });
       const url = URL.createObjectURL(blob);
-      const sizeMB = (blob.size / (1024*1024)).toFixed(1);
+      const sizeMB = (blob.size / (1024 * 1024)).toFixed(1);
 
       const card = document.createElement('div');
       card.className = 'clip-card';
       card.innerHTML = `
         <div class="clip-info">
-          <b>Parte ${idx + 1}</b>
+          <b>Parte ${index}</b>
           <span>${sizeMB} MB</span>
         </div>
-        <a class="dl-btn" download="parte_${String(idx+1).padStart(2,'0')}.mp4" href="${url}">Descargar</a>
+        <a class="dl-btn" download="parte_${String(index).padStart(2,'0')}.mp4" href="${url}">Descargar</a>
       `;
       resultsDiv.appendChild(card);
-
-      ffmpeg.FS('unlink', fname);
     });
 
-    ffmpeg.FS('unlink', inputName);
-    progressFill.classList.remove('indeterminate');
     progressLabel.textContent = 'Completado';
     progressFill.style.width = '100%';
     progressPct.textContent = '100%';
