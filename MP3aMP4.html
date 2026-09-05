@@ -2,15 +2,10 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <!-- Viewport ajustado para escalado correcto en móviles y escritorio -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Convertidor MP3 a MP4 Ultra Rápido</title>
+  <title>Convertidor MP3 a MP4 Directo</title>
   <style>
-    * {
-      box-sizing: border-box;
-    }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       background: #121212;
       color: #e0e0e0;
       display: flex;
@@ -18,117 +13,89 @@
       align-items: center;
       min-height: 100vh;
       margin: 0;
-      padding: 1.5rem;
-      font-size: 18px; /* Tamaño de fuente base más grande */
     }
     .card {
       background: #1e1e1e;
-      padding: 2.5rem 2rem;
-      border-radius: 16px;
-      box-shadow: 0 12px 32px rgba(0,0,0,0.6);
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
       width: 100%;
-      max-width: 640px; /* Tarjeta más ancha */
+      max-width: 480px;
       text-align: center;
     }
-    h2 { 
-      margin-top: 0; 
-      margin-bottom: 1rem;
-      color: #fff; 
-      font-size: 2rem; /* Título destacado */
-    }
+    h2 { margin-top: 0; color: #fff; }
     input[type="file"] { display: none; }
-    
     .btn {
-      display: block;
+      display: inline-block;
       background: #3b82f6;
       color: white;
-      padding: 18px 24px; /* Botones más altos y fáciles de presionar */
-      border-radius: 12px;
+      padding: 12px 20px;
+      border-radius: 8px;
       cursor: pointer;
       font-weight: bold;
-      font-size: 1.25rem; /* Texto de botón grande */
-      margin-top: 1.5rem;
+      margin-top: 15px;
       border: none;
       width: 100%;
-      transition: background 0.2s, transform 0.1s;
-      text-decoration: none;
+      box-sizing: border-box;
+      transition: background 0.2s;
     }
     .btn:hover { background: #2563eb; }
-    .btn:active { transform: scale(0.99); }
-    .btn:disabled { background: #4b5563; cursor: not-allowed; opacity: 0.7; }
-    
+    .btn:disabled { background: #4b5563; cursor: not-allowed; }
+
     .engine-badge {
       display: inline-block;
-      padding: 8px 18px;
-      border-radius: 20px;
-      font-size: 1rem;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 0.8rem;
       font-weight: bold;
-      margin-bottom: 1.5rem;
-      background: #374151;
-      color: #9ca3af;
+      margin-bottom: 15px;
+      background: #065f46;
+      color: #34d399;
     }
-    .engine-badge.ready { background: #065f46; color: #34d399; }
-    .engine-badge.loading { background: #92400e; color: #fde68a; }
 
-    /* Barra de Progreso más visible */
     .progress-container {
       width: 100%;
       background-color: #374151;
-      border-radius: 12px;
+      border-radius: 8px;
       overflow: hidden;
-      margin-top: 1.5rem;
+      margin-top: 15px;
       display: none;
-      height: 28px; /* Barra más gruesa */
+      height: 18px;
       position: relative;
     }
     .progress-bar {
       width: 0%;
       height: 100%;
       background-color: #10b981;
-      transition: width 0.2s ease-in-out;
+      transition: width 0.1s linear;
     }
     .progress-text {
       position: absolute;
       width: 100%;
       top: 0;
       left: 0;
-      font-size: 1rem;
+      font-size: 0.75rem;
       font-weight: bold;
-      line-height: 28px;
+      line-height: 18px;
       color: #ffffff;
-      text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+      text-shadow: 0 1px 2px rgba(0,0,0,0.8);
     }
 
-    #status { 
-      margin-top: 1.5rem; 
-      font-size: 1.1rem; 
-      color: #cbd5e1; 
-      word-break: break-all;
-      line-height: 1.5;
-    }
-    #preview { 
-      margin-top: 1.5rem; 
-      max-width: 260px; /* Carátula de mayor tamaño */
-      width: 100%;
-      border-radius: 12px; 
-      display: none; 
-      margin-left: auto; 
-      margin-right: auto; 
-      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-    }
+    #status { margin-top: 15px; font-size: 0.9rem; color: #a1a1aa; word-break: break-all; }
+    #preview { margin-top: 15px; max-width: 180px; border-radius: 8px; display: none; margin-left: auto; margin-right: auto; }
+    canvas { display: none; }
   </style>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js"></script>
-  <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
 </head>
 <body>
 
 <div class="card">
-  <h2>MP3 a MP4 Converter</h2>
-  <div id="engineStatus" class="engine-badge loading">Cargando motor de procesamiento...</div>
+  <h2>MP3 a MP4 Directo</h2>
+  <div id="engineStatus" class="engine-badge">Motor WebAudio Listo</div>
   
   <br>
-  <label for="audioFile" id="fileLabel" class="btn" style="opacity: 0.5; pointer-events: none;">Seleccionar Archivo MP3</label>
+  <label for="audioFile" id="fileLabel" class="btn">Seleccionar Archivo MP3</label>
   <input type="file" id="audioFile" accept="audio/mp3, audio/*">
   
   <img id="preview" alt="Carátula detectada">
@@ -138,23 +105,16 @@
     <div class="progress-text" id="progressText">0%</div>
   </div>
 
-  <div id="status">Iniciando motor FFmpeg...</div>
+  <div id="status">Selecciona un archivo MP3 para comenzar.</div>
   
   <button id="convertBtn" class="btn" style="background: #10b981; display: none;">Convertir a MP4</button>
   <a id="downloadLink" class="btn" style="background: #8b5cf6; display: none;">Descargar Video (.mp4)</a>
+  
+  <canvas id="canvas" width="1280" height="720"></canvas>
 </div>
 
 <script>
   const jsMediaTags = window.jsmediatags;
-  const { createFFmpeg, fetchFile } = FFmpeg;
-  
-  const ffmpeg = createFFmpeg({
-    log: true,
-    corePath: 'https://unpkg.com/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js'
-  });
-
-  const engineStatus = document.getElementById('engineStatus');
-  const fileLabel = document.getElementById('fileLabel');
   const fileInput = document.getElementById('audioFile');
   const status = document.getElementById('status');
   const convertBtn = document.getElementById('convertBtn');
@@ -163,45 +123,23 @@
   const progressContainer = document.getElementById('progressContainer');
   const progressBar = document.getElementById('progressBar');
   const progressText = document.getElementById('progressText');
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
 
   let selectedFile = null;
-  let hasCover = false;
-
-  window.addEventListener('load', async () => {
-    try {
-      status.innerText = "Descargando motor FFmpeg.wasm...";
-      await ffmpeg.load();
-      
-      engineStatus.innerText = "Motor Cargado y Listo";
-      engineStatus.className = "engine-badge ready";
-      status.innerText = "Por favor selecciona un archivo MP3.";
-      
-      fileLabel.style.opacity = "1";
-      fileLabel.style.pointerEvents = "auto";
-    } catch (err) {
-      console.error(err);
-      engineStatus.innerText = "Error al cargar motor";
-      status.innerText = "No se pudo iniciar WebAssembly. Revisa tu conexión a Internet.";
-    }
-  });
-
-  ffmpeg.setProgress(({ ratio }) => {
-    const percent = Math.min(Math.max(Math.round(ratio * 100), 0), 100);
-    progressBar.style.width = `${percent}%`;
-    progressText.innerText = `${percent}%`;
-  });
+  let coverImage = null;
 
   fileInput.addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
     selectedFile = file;
-    hasCover = false;
-    status.innerText = `Analizando metadatos: ${file.name}...`;
+    status.innerText = `Leyendo metadatos: ${file.name}...`;
     convertBtn.style.display = "none";
     downloadLink.style.display = "none";
     preview.style.display = "none";
     progressContainer.style.display = "none";
+    coverImage = null;
 
     jsMediaTags.read(file, {
       onSuccess: function(tag) {
@@ -213,17 +151,21 @@
           }
           const base64 = "data:" + picture.format + ";base64," + window.btoa(base64String);
           
-          preview.src = base64;
-          preview.style.display = "block";
-          hasCover = true;
-          status.innerText = "¡Carátula integrada detectada! Listo para procesar.";
+          coverImage = new Image();
+          coverImage.onload = () => {
+            preview.src = base64;
+            preview.style.display = "block";
+            status.innerText = "Carátula detectada. Listo para procesar MP4.";
+            convertBtn.style.display = "block";
+          };
+          coverImage.src = base64;
         } else {
-          status.innerText = "Sin carátula detectada. Se generará con fondo sólido.";
+          status.innerText = "Sin carátula detectada. Se usarán datos por defecto.";
+          convertBtn.style.display = "block";
         }
-        convertBtn.style.display = "block";
       },
       onError: function() {
-        status.innerText = "Archivo listo. Se generará con fondo sólido.";
+        status.innerText = "Archivo cargado correctamente.";
         convertBtn.style.display = "block";
       }
     });
@@ -236,57 +178,97 @@
     progressContainer.style.display = "block";
     progressBar.style.width = "0%";
     progressText.innerText = "0%";
-    status.innerText = "Cargando archivo al procesador...";
+    status.innerText = "Procesando audio e imagen...";
 
-    ffmpeg.FS('writeFile', 'input.mp3', await fetchFile(selectedFile));
-
-    if (hasCover) {
-      status.innerText = "Extrayendo carátula y procesando MP4...";
-      try {
-        await ffmpeg.run('-i', 'input.mp3', '-an', '-vcodec', 'copy', 'cover.jpg');
-        await ffmpeg.run(
-          '-loop', '1', 
-          '-i', 'cover.jpg', 
-          '-i', 'input.mp3', 
-          '-c:v', 'libx264', 
-          '-tune', 'stillimage', 
-          '-c:a', 'copy', 
-          '-shortest', 
-          'output.mp4'
-        );
-      } catch (e) {
-        await renderFallback();
-      }
+    // Dibujar en Canvas
+    if (coverImage) {
+      ctx.fillStyle = "#000000";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      const scale = Math.min(canvas.width / coverImage.width, canvas.height / coverImage.height);
+      const w = coverImage.width * scale;
+      const h = coverImage.height * scale;
+      const x = (canvas.width - w) / 2;
+      const y = (canvas.height - h) / 2;
+      ctx.drawImage(coverImage, x, y, w, h);
     } else {
-      await renderFallback();
+      ctx.fillStyle = "#1e293b";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "30px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(selectedFile.name, canvas.width / 2, canvas.height / 2);
     }
 
-    status.innerText = "¡Proceso finalizado con éxito!";
-    progressBar.style.width = "100%";
-    progressText.innerText = "100%";
+    // Inicializar Contexto de Audio Web (Resuelve problemas de autostart)
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioContext.state === 'suspended') {
+      await audioContext.resume();
+    }
 
-    const data = ffmpeg.FS('readFile', 'output.mp4');
-    const videoUrl = URL.createObjectURL(new Blob([data.buffer], { type: 'video/mp4' }));
+    const arrayBuffer = await selectedFile.arrayBuffer();
+    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
 
-    downloadLink.href = videoUrl;
-    downloadLink.download = selectedFile.name.replace(/\.[^/.]+$/, "") + ".mp4";
-    downloadLink.style.display = "block";
-    convertBtn.disabled = false;
+    // Crear un destino de flujo directo para el audio
+    const mediaStreamDest = audioContext.createMediaStreamDestination();
+    const sourceNode = audioContext.createBufferSource();
+    sourceNode.buffer = audioBuffer;
+    sourceNode.connect(mediaStreamDest);
+
+    // Combinar pista de video estático con la pista directa de audio
+    const canvasStream = canvas.captureStream(1);
+    const combinedStream = new MediaStream([
+      ...canvasStream.getVideoTracks(),
+      ...mediaStreamDest.stream.getAudioTracks()
+    ]);
+
+    // Evaluación de MIME types compatibles
+    const mimeTypes = [
+      'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
+      'video/mp4;codecs=h264,aac',
+      'video/mp4',
+      'video/webm'
+    ];
+
+    let selectedMime = mimeTypes.find(type => MediaRecorder.isTypeSupported(type)) || 'video/webm';
+
+    const mediaRecorder = new MediaRecorder(combinedStream, { mimeType: selectedMime });
+    const chunks = [];
+    
+    mediaRecorder.ondataavailable = e => chunks.push(e.data);
+    
+    mediaRecorder.onstop = () => {
+      const blob = new Blob(chunks, { type: selectedMime });
+      const videoUrl = URL.createObjectURL(blob);
+      
+      downloadLink.href = videoUrl;
+      downloadLink.download = selectedFile.name.replace(/\.[^/.]+$/, "") + ".mp4";
+      downloadLink.style.display = "block";
+      status.innerText = "¡Conversión finalizada con éxito!";
+      convertBtn.disabled = false;
+      progressBar.style.width = "100%";
+      progressText.innerText = "100%";
+    };
+
+    // Iniciar renderizado por nodo
+    sourceNode.start(0);
+    mediaRecorder.start();
+
+    const startTime = audioContext.currentTime;
+    const duration = audioBuffer.duration;
+
+    const interval = setInterval(() => {
+      const elapsed = audioContext.currentTime - startTime;
+      const percent = Math.min(Math.round((elapsed / duration) * 100), 100);
+      progressBar.style.width = `${percent}%`;
+      progressText.innerText = `${percent}%`;
+
+      if (elapsed >= duration) {
+        clearInterval(interval);
+        mediaRecorder.stop();
+        sourceNode.stop();
+      }
+    }, 100);
   });
-
-  async function renderFallback() {
-    status.innerText = "Procesando MP4 con fondo genérico...";
-    await ffmpeg.run(
-      '-f', 'lavfi', 
-      '-i', 'color=c=black:s=1280x720:r=1', 
-      '-i', 'input.mp3', 
-      '-c:v', 'libx264', 
-      '-tune', 'stillimage', 
-      '-c:a', 'copy', 
-      '-shortest', 
-      'output.mp4'
-    );
-  }
 </script>
 
 </body>
