@@ -1,9 +1,12 @@
+<!-- VERSION: 1.0.4 - GitHub Pages Compatible -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Convertidor MP3 a MP4 Directo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Convertidor MP3 a MP4 v1.0.4</title>
   <style>
+    * { box-sizing: border-box; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       background: #121212;
@@ -13,54 +16,65 @@
       align-items: center;
       min-height: 100vh;
       margin: 0;
+      padding: 1.5rem;
+      font-size: 18px;
     }
     .card {
       background: #1e1e1e;
-      padding: 2rem;
-      border-radius: 12px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+      padding: 2.5rem 2rem;
+      border-radius: 16px;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.6);
       width: 100%;
-      max-width: 480px;
+      max-width: 640px;
       text-align: center;
     }
-    h2 { margin-top: 0; color: #fff; }
+    .version-tag {
+      display: inline-block;
+      background: #2563eb;
+      color: #ffffff;
+      font-size: 0.85rem;
+      font-weight: bold;
+      padding: 4px 10px;
+      border-radius: 6px;
+      vertical-align: middle;
+      margin-left: 8px;
+    }
+    h2 { margin-top: 0; color: #fff; font-size: 2rem; display: flex; align-items: center; justify-content: center; }
     input[type="file"] { display: none; }
     .btn {
-      display: inline-block;
+      display: block;
       background: #3b82f6;
       color: white;
-      padding: 12px 20px;
-      border-radius: 8px;
+      padding: 18px 24px;
+      border-radius: 12px;
       cursor: pointer;
       font-weight: bold;
-      margin-top: 15px;
+      font-size: 1.25rem;
+      margin-top: 1.5rem;
       border: none;
       width: 100%;
-      box-sizing: border-box;
-      transition: background 0.2s;
+      text-decoration: none;
     }
     .btn:hover { background: #2563eb; }
-    .btn:disabled { background: #4b5563; cursor: not-allowed; }
-
+    .btn:disabled { background: #4b5563; cursor: not-allowed; opacity: 0.7; }
     .engine-badge {
       display: inline-block;
-      padding: 4px 12px;
-      border-radius: 12px;
-      font-size: 0.8rem;
+      padding: 8px 18px;
+      border-radius: 20px;
+      font-size: 1rem;
       font-weight: bold;
-      margin-bottom: 15px;
+      margin-bottom: 1.5rem;
       background: #065f46;
       color: #34d399;
     }
-
     .progress-container {
       width: 100%;
       background-color: #374151;
-      border-radius: 8px;
+      border-radius: 12px;
       overflow: hidden;
-      margin-top: 15px;
+      margin-top: 1.5rem;
       display: none;
-      height: 18px;
+      height: 28px;
       position: relative;
     }
     .progress-bar {
@@ -72,30 +86,27 @@
     .progress-text {
       position: absolute;
       width: 100%;
-      top: 0;
-      left: 0;
-      font-size: 0.75rem;
+      top: 0; left: 0;
+      font-size: 1rem;
       font-weight: bold;
-      line-height: 18px;
+      line-height: 28px;
       color: #ffffff;
-      text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+      text-shadow: 0 1px 3px rgba(0,0,0,0.9);
     }
-
-    #status { margin-top: 15px; font-size: 0.9rem; color: #a1a1aa; word-break: break-all; }
-    #preview { margin-top: 15px; max-width: 180px; border-radius: 8px; display: none; margin-left: auto; margin-right: auto; }
+    #status { margin-top: 1.5rem; font-size: 1.1rem; color: #cbd5e1; word-break: break-all; }
+    #preview { margin-top: 1.5rem; max-width: 260px; width: 100%; border-radius: 12px; display: none; margin: 1.5rem auto 0; }
     canvas { display: none; }
   </style>
-
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js"></script>
 </head>
 <body>
 
 <div class="card">
-  <h2>MP3 a MP4 Directo</h2>
-  <div id="engineStatus" class="engine-badge">Motor WebAudio Listo</div>
+  <h2>MP3 a MP4 <span class="version-tag">v1.0.4</span></h2>
+  <div class="engine-badge">Motor Web Audio Listo</div>
   
   <br>
-  <label for="audioFile" id="fileLabel" class="btn">Seleccionar Archivo MP3</label>
+  <label for="audioFile" class="btn">Seleccionar Archivo MP3</label>
   <input type="file" id="audioFile" accept="audio/mp3, audio/*">
   
   <img id="preview" alt="Carátula detectada">
@@ -134,7 +145,7 @@
     if (!file) return;
 
     selectedFile = file;
-    status.innerText = `Leyendo metadatos: ${file.name}...`;
+    status.innerText = `Lectura de metadatos: ${file.name}...`;
     convertBtn.style.display = "none";
     downloadLink.style.display = "none";
     preview.style.display = "none";
@@ -155,12 +166,12 @@
           coverImage.onload = () => {
             preview.src = base64;
             preview.style.display = "block";
-            status.innerText = "Carátula detectada. Listo para procesar MP4.";
+            status.innerText = "Carátula detectada. Listo para convertir.";
             convertBtn.style.display = "block";
           };
           coverImage.src = base64;
         } else {
-          status.innerText = "Sin carátula detectada. Se usarán datos por defecto.";
+          status.innerText = "Sin carátula integrada. Se creará con fondo sólido.";
           convertBtn.style.display = "block";
         }
       },
@@ -178,9 +189,8 @@
     progressContainer.style.display = "block";
     progressBar.style.width = "0%";
     progressText.innerText = "0%";
-    status.innerText = "Procesando audio e imagen...";
+    status.innerText = "Procesando...";
 
-    // Dibujar en Canvas
     if (coverImage) {
       ctx.fillStyle = "#000000";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -194,41 +204,29 @@
       ctx.fillStyle = "#1e293b";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.fillStyle = "#ffffff";
-      ctx.font = "30px sans-serif";
+      ctx.font = "36px sans-serif";
       ctx.textAlign = "center";
       ctx.fillText(selectedFile.name, canvas.width / 2, canvas.height / 2);
     }
 
-    // Inicializar Contexto de Audio Web (Resuelve problemas de autostart)
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    if (audioContext.state === 'suspended') {
-      await audioContext.resume();
-    }
+    if (audioContext.state === 'suspended') await audioContext.resume();
 
     const arrayBuffer = await selectedFile.arrayBuffer();
     const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
 
-    // Crear un destino de flujo directo para el audio
     const mediaStreamDest = audioContext.createMediaStreamDestination();
     const sourceNode = audioContext.createBufferSource();
     sourceNode.buffer = audioBuffer;
     sourceNode.connect(mediaStreamDest);
 
-    // Combinar pista de video estático con la pista directa de audio
     const canvasStream = canvas.captureStream(1);
     const combinedStream = new MediaStream([
       ...canvasStream.getVideoTracks(),
       ...mediaStreamDest.stream.getAudioTracks()
     ]);
 
-    // Evaluación de MIME types compatibles
-    const mimeTypes = [
-      'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
-      'video/mp4;codecs=h264,aac',
-      'video/mp4',
-      'video/webm'
-    ];
-
+    const mimeTypes = ['video/mp4;codecs=avc1.42E01E,mp4a.40.2', 'video/mp4;codecs=h264,aac', 'video/mp4', 'video/webm'];
     let selectedMime = mimeTypes.find(type => MediaRecorder.isTypeSupported(type)) || 'video/webm';
 
     const mediaRecorder = new MediaRecorder(combinedStream, { mimeType: selectedMime });
@@ -243,13 +241,12 @@
       downloadLink.href = videoUrl;
       downloadLink.download = selectedFile.name.replace(/\.[^/.]+$/, "") + ".mp4";
       downloadLink.style.display = "block";
-      status.innerText = "¡Conversión finalizada con éxito!";
+      status.innerText = "¡Proceso finalizado!";
       convertBtn.disabled = false;
       progressBar.style.width = "100%";
       progressText.innerText = "100%";
     };
 
-    // Iniciar renderizado por nodo
     sourceNode.start(0);
     mediaRecorder.start();
 
