@@ -9,20 +9,74 @@
 <meta name="theme-color" content="#0969da">
   
   <style>
-    body { font-family: system-ui, sans-serif; max-width: 600px; margin: 40px auto; padding: 0 20px; line-height: 1.6; }
-    h1 { border-bottom: 2px solid #ccc; padding-bottom: 10px; }
+    :root {
+      --bg: #ffffff;
+      --text: #1a1a1a;
+      --border: #cccccc;
+      --link-bg: #f4f4f5;
+      --link-bg-hover: #e4e4e7;
+      --link-color: #0969da;
+    }
+    [data-theme="dark"] {
+      --bg: #0d1117;
+      --text: #e6e6e6;
+      --border: #333333;
+      --link-bg: #21262d;
+      --link-bg-hover: #2d333b;
+      --link-color: #58a6ff;
+    }
+    body {
+      font-family: system-ui, sans-serif;
+      max-width: 600px;
+      margin: 40px auto;
+      padding: 0 20px;
+      line-height: 1.6;
+      background: var(--bg);
+      color: var(--text);
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+    .top-bar { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border); padding-bottom: 10px; }
+    h1 { margin: 0; border: none; padding: 0; }
+    #toggle-tema { background: var(--link-bg); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; cursor: pointer; font-size: 1.1rem; line-height: 1; }
+    #toggle-tema:hover { background: var(--link-bg-hover); }
     ul { list-style: none; padding: 0; }
     li { margin: 10px 0; }
-    a { display: block; padding: 12px 16px; background: #f4f4f5; color: #0969da; text-decoration: none; border-radius: 6px; font-weight: 500; }
-    a:hover { background: #e4e4e7; }
+    a { display: block; padding: 12px 16px; background: var(--link-bg); color: var(--link-color); text-decoration: none; border-radius: 6px; font-weight: 500; }
+    a:hover { background: var(--link-bg-hover); }
   </style>
 </head>
 <body>
 
-  <h1>Menú de Herramientas</h1>
+  <div class="top-bar">
+    <h1>Menú de Herramientas</h1>
+    <button id="toggle-tema" onclick="alternarTema()" aria-label="Alternar modo oscuro">🌙</button>
+  </div>
   <ul id="menu">Cargando herramientas...</ul>
 
   <script>
+    // --- Modo oscuro ---
+    function aplicarTema(tema) {
+      document.documentElement.setAttribute('data-theme', tema);
+      document.getElementById('toggle-tema').textContent = tema === 'dark' ? '☀️' : '🌙';
+    }
+
+    function alternarTema() {
+      const actual = document.documentElement.getAttribute('data-theme');
+      const nuevo = actual === 'dark' ? 'light' : 'dark';
+      localStorage.setItem('tema', nuevo);
+      aplicarTema(nuevo);
+    }
+
+    (function inicializarTema() {
+      const guardado = localStorage.getItem('tema');
+      if (guardado) {
+        aplicarTema(guardado);
+      } else {
+        const prefiereOscuro = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        aplicarTema(prefiereOscuro ? 'dark' : 'light');
+      }
+    })();
+
     // CONFIGURA AQUÍ TU USUARIO Y REPOSITORIO
     const usuario = 'altimiras';
     const repositorio = 'Rep';
