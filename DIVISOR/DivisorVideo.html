@@ -219,7 +219,7 @@
 </head>
 <body>
 
-<h1>✂️ Divisor de Video para Estados <span style="font-size:0.6em; color:var(--muted); font-weight:400;">v1.1</span></h1>
+<h1>✂️ Divisor de Video para Estados <span style="font-size:0.6em; color:var(--muted); font-weight:400;">v1.2</span></h1>
 <div class="subtitle">Corta un video largo en tramos listos para publicar en secuencia — funciona sin conexión, todo se procesa en tu celular.</div>
 
 <div class="panel" id="loadBanner">
@@ -412,40 +412,50 @@ processBtn.addEventListener('click', async () => {
 
       log(`Procesando parte ${i + 1}/${totalSegments} (inicio: ${start.toFixed(1)}s, duración: ${seg}s)…`);
 
-      const runArgs = [];
-      if (start > 0) {
-        runArgs.push('-ss', String(start));
-      }
-      runArgs.push(
-        '-i', inputName,
-        '-t', String(seg),
-        '-map', '0',
-        '-c:v', 'libx264',
-        '-preset', 'ultrafast',
-        '-crf', '23',
-        '-c:a', 'aac',
-        '-b:a', '128k',
-        '-avoid_negative_ts', 'make_zero',
-        outName
-      );
+      const runArgs = (segStart) => {
+        const args = [];
+        if (segStart > 0) args.push('-ss', String(segStart));
+        args.push(
+          '-i', inputName,
+          '-t', String(seg),
+          '-map', '0',
+          '-c:v', 'libx264',
+          '-preset', 'ultrafast',
+          '-crf', '23',
+          '-c:a', 'aac',
+          '-b:a', '128k',
+          '-avoid_negative_ts', 'make_zero',
+          outName
+        );
+        return args;
+      };
 
-      await ffmpeg.run(...runArgs);
+      let data = null;
+      for (let attempt = 1; attempt <= 2; attempt++) {
+        if (attempt === 2) log(`Parte ${i + 1}: reintentando (posible arranque en frío del motor)…`);
+        await ffmpeg.run(...runArgs(start));
 
-      let data;
-      try {
-        data = ffmpeg.FS('readFile', outName);
-      } catch (readErr) {
-        log(`Parte ${i + 1}: no se generó archivo de salida (${readErr.message}). Se omite.`);
-        continue;
+        try {
+          data = ffmpeg.FS('readFile', outName);
+        } catch (readErr) {
+          data = null;
+        }
+
+        if (data && data.length > 0) {
+          break;
+        }
+
+        try { ffmpeg.FS('unlink', outName); } catch (e) {}
+        data = null;
       }
 
       if (!data || data.length === 0) {
-        log(`Parte ${i + 1}: archivo vacío, se omite.`);
+        log(`Parte ${i + 1}: no se generó archivo de salida tras 2 intentos. Se omite.`);
         continue;
       }
 
       clipBlobs.push({ index: i + 1, data: data.slice() });
-      ffmpeg.FS('unlink', outName);
+      try { ffmpeg.FS('unlink', outName); } catch (e) {}
       log(`Parte ${i + 1} lista (${(data.length / 1024 / 1024).toFixed(2)} MB).`);
     }
 
