@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Congelar Video con Foto 1:1 (MP4)</title>
+    <title>Congelar Video con Foto 1:1 (MP4 + Progreso)</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -34,6 +34,29 @@
         button:hover { background-color: #45a049; }
         button:disabled { background-color: #555; cursor: not-allowed; }
         #status { margin-top: 15px; text-align: center; font-weight: bold; color: #ff9800; }
+        
+        /* Estilos de la barra de progreso */
+        .progress-bar-container {
+            width: 100%;
+            background-color: #2d2d2d;
+            border-radius: 5px;
+            margin-top: 15px;
+            overflow: hidden;
+            display: none;
+            border: 1px solid #444;
+        }
+        .progress-bar {
+            width: 0%;
+            height: 20px;
+            background-color: #4CAF50;
+            text-align: center;
+            line-height: 20px;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            transition: width 0.1s linear;
+        }
+
         canvas { display: none; }
     </style>
 </head>
@@ -41,7 +64,7 @@
 
 <div class="container">
     <h2>Congelar Video (Desde el segundo 1 en MP4)</h2>
-    <p style="text-align: center; font-size: 13px; color: #999;">Genera el video final directamente en formato MP4.</p>
+    <p style="text-align: center; font-size: 13px; color: #999;">Genera el video final en MP4 con barra de progreso.</p>
 
     <div class="form-group">
         <label>1. Archivo de Video:</label>
@@ -65,6 +88,11 @@
     </div>
 
     <button id="processBtn" disabled style="margin-top: 20px;">Generar y Descargar MP4</button>
+    
+    <div class="progress-bar-container" id="progressContainer">
+        <div class="progress-bar" id="progressBar">0%</div>
+    </div>
+    
     <div id="status"></div>
 
     <div id="downloadContainer" style="margin-top: 15px; text-align: center; display: none;">
@@ -81,6 +109,8 @@
     const photoPreview = document.getElementById('photoPreview');
     const processBtn = document.getElementById('processBtn');
     const statusDiv = document.getElementById('status');
+    const progressContainer = document.getElementById('progressContainer');
+    const progressBar = document.getElementById('progressBar');
     const downloadContainer = document.getElementById('downloadContainer');
     const downloadLink = document.getElementById('downloadLink');
     const canvas = document.getElementById('canvas');
@@ -125,6 +155,9 @@
     processBtn.addEventListener('click', async () => {
         processBtn.disabled = true;
         downloadContainer.style.display = 'none';
+        progressContainer.style.display = 'block';
+        progressBar.style.width = '0%';
+        progressBar.innerText = '0%';
         statusDiv.innerText = "Preparando procesamiento...";
 
         const vid = document.createElement('video');
@@ -158,7 +191,6 @@
         let recordedChunks = [];
         let recorder;
 
-        // Intentar forzar códec MP4 (H.264), si el navegador no lo soporta de forma nativa, recurre a MP4 genérico
         const mimeTypes = [
             'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
             'video/mp4;codecs=avc1',
@@ -174,11 +206,7 @@
         }
 
         try {
-            if (selectedMimeType) {
-                recorder = new MediaRecorder(mediaStream, { mimeType: selectedMimeType });
-            } else {
-                recorder = new MediaRecorder(mediaStream); // Fallback predeterminado
-            }
+            recorder = selectedMimeType ? new MediaRecorder(mediaStream, { mimeType: selectedMimeType }) : new MediaRecorder(mediaStream);
         } catch (e) {
             recorder = new MediaRecorder(mediaStream);
         }
@@ -197,7 +225,7 @@
             processBtn.disabled = false;
         };
 
-        statusDiv.innerText = "Renderizando MP4 (reproduciendo internamente)...";
+        statusDiv.innerText = "Renderizando MP4...";
         recorder.start();
         vid.currentTime = 0;
         vid.play();
@@ -205,9 +233,16 @@
         function renderFrame() {
             if (vid.paused || vid.ended || vid.currentTime >= duration) {
                 vid.pause();
+                progressBar.style.width = '100%';
+                progressBar.innerText = '100%';
                 setTimeout(() => recorder.stop(), 200);
                 return;
             }
+
+            // Calcular porcentaje actual de avance
+            let percent = Math.min(Math.floor((vid.currentTime / duration) * 100), 100);
+            progressBar.style.width = percent + '%';
+            progressBar.innerText = percent + '%';
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -220,7 +255,7 @@
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
                 
                 const h = canvas.height;
-                const w = h; // Relación 1:1 cuadrada respecto a la altura del video
+                const w = h; 
                 const x = (canvas.width - w) / 2;
                 const y = 0;
                 
