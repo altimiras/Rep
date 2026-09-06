@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Congelar Video desde Segundo 1 con Foto 1:1</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #121212;
+            color: #ffffff;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            max-width: 650px;
+            width: 100%;
+            background: #1e1e1e;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+        }
+        h2 {
+            text-align: center;
+            color: #4CAF50;
+            margin-top: 0;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #b0bec5;
+        }
+        input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            background: #2d2d2d;
+            border: 1px solid #444;
+            color: #fff;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        .preview-container {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .preview-box {
+            flex: 1;
+            text-align: center;
+            background: #252525;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px dashed #444;
+        }
+        video, img {
+            max-width: 100%;
+            max-height: 150px;
+            border-radius: 4px;
+            margin-top: 5px;
+            object-fit: contain;
+        }
+        button {
+            width: 100%;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #555;
+            cursor: not-allowed;
+        }
+        #status {
+            margin-top: 15px;
+            text-align: center;
+            font-weight: bold;
+            color: #ff9800;
+        }
+    </style>
+    <!-- Script para habilitar aislamiento en GitHub Pages / navegadores -->
+    <script src="https://unpkg.com/coi-serviceworker@0.1.7/coi-serviceworker.js"></script>
+    <!-- FFmpeg.wasm -->
+    <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js"></script>
+</head>
+<body>
+
+<div class="container">
+    <h2>Congelar Video (Desde el segundo 1)</h2>
+    <p style="text-align: center; font-size: 13px; color: #999;">El video transcurrirá normalmente el primer segundo, y a partir de ahí se congelará con tu foto 1:1 hasta el final.</p>
+
+    <div class="form-group">
+        <label for="videoInput">1. Selecciona tu archivo de Video:</label>
+        <input type="file" id="videoInput" accept="video/*">
+    </div>
+
+    <div class="form-group">
+        <label for="photoInput">2. Selecciona tu Foto 1:1:</label>
+        <input type="file" id="photoInput" accept="image/*">
+    </div>
+
+    <div class="preview-container">
+        <div class="preview-box">
+            <span style="font-size: 13px;">Video</span><br>
+            <video id="videoPreview" controls style="display:none;"></video>
+        </div>
+        <div class="preview-box">
+            <span style="font-size: 13px;">Foto 1:1</span><br>
+            <img id="photoPreview" style="display:none;" alt="Foto 1:1">
+        </div>
+    </div>
+
+    <button id="processBtn" disabled style="margin-top: 20px;">Generar Video Congelado</button>
+    <div id="status"></div>
+
+    <div id="downloadContainer" style="margin-top: 20px; text-align: center; display: none;">
+        <a id="downloadLink" download="video_congelado_final.mp4">
+            <button style="background-color: #2196F3;">Descargar Video Resultante</button>
+        </a>
+    </div>
+</div>
+
+<script>
+    const { FFmpeg } = FFmpegWASM;
+    let ffmpeg = null;
+    let videoFile = null;
+    let photoFile = null;
+
+    const videoInput = document.getElementById('videoInput');
+    const photoInput = document.getElementById('photoInput');
+    const videoPreview = document.getElementById('videoPreview');
+    const photoPreview = document.getElementById('photoPreview');
+    const processBtn = document.getElementById('processBtn');
+    const statusDiv = document.getElementById('status');
+    const downloadContainer = document.getElementById('downloadContainer');
+    const downloadLink = document.getElementById('downloadLink');
+
+    videoInput.addEventListener('change', (e) => {
+        videoFile = e.target.files[0];
+        if (videoFile) {
+            videoPreview.src = URL.createObjectURL(videoFile);
+            videoPreview.style.display = 'block';
+            checkReady();
+        }
+    });
+
+    photoInput.addEventListener('change', (e) => {
+        photoFile = e.target.files[0];
+        if (photoFile) {
+            photoPreview.src = URL.createObjectURL(photoFile);
+            photoPreview.style.display = 'block';
+            checkReady();
+        }
+    });
+
+    function checkReady() {
+        if (videoFile && photoFile) {
+            processBtn.disabled = false;
+        }
+    }
+
+    processBtn.addEventListener('click', async () => {
+        processBtn.disabled = true;
+        downloadContainer.style.display = 'none';
+        statusDiv.innerText = "Cargando motor de video en el navegador...";
+
+        try {
+            if (!ffmpeg) {
+                ffmpeg = new FFmpeg();
+                await ffmpeg.load({
+                    coreURL: "https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js",
+                    wasmURL: "https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm"
+                });
+            }
+
+            statusDiv.innerText = "Leyendo archivos...";
+            const videoData = new Uint8Array(await videoFile.arrayBuffer());
+            const photoData = new Uint8Array(await photoFile.arrayBuffer());
+            
+            await ffmpeg.writeFile('input_video.mp4', videoData);
+            await ffmpeg.writeFile('input_photo.jpg', photoData);
+
+            // Obtener la duración total del video original usando un elemento temporal de video en JS
+            statusDiv.innerText = "Calculando duración del video...";
+            const duration = await new Promise((resolve) => {
+                const tempVideo = document.createElement('video');
+                tempVideo.src = URL.createObjectURL(videoFile);
+                tempVideo.onloadedmetadata = () => {
+                    resolve(tempVideo.duration);
+                };
+            });
+
+            // El video dura X segundos. El segundo 1 al final dura: (duration - 1)
+            const duracionRestante = Math.max(duration - 1, 0.1);
+
+            statusDiv.innerText = `Procesando: Congelando desde el segundo 1 hasta el final (${duration.toFixed(1)}s)...`;
+
+            // Comando FFmpeg:
+            // 1. Parte 1: El video original desde 0 hasta 1 segundo.
+            // 2. Parte 2: La foto 1:1 rellenada (padding) que dura desde el segundo 1 hasta el final del video.
+            // 3. Une ambas partes de video y ajusta el audio correspondiente cortando en el segundo 1.
+            await ffmpeg.exec([
+                '-i', 'input_video.mp4',
+                '-loop', '1',
+                '-t', `${duracionRestante}`,
+                '-i', 'input_photo.jpg',
+                '-filter_complex', 
+                `[1:v]scale=-1:ih,pad=w=ow:h=ih[padded];` +
+                `[0:v]trim=end=1,setpts=PTS-STARTPTS[v1];` +
+                `[padded]setpts=PTS-STARTPTS[v_img];` +
+                `[v1][v_img]concat=n=2:v=1:a=0[v_final];` +
+                `[0:a]atrim=end=1,setpts=PTS-STARTPTS[a_final]`,
+                '-map', '[v_final]',
+                '-map', '[a_final]',
+                '-c:v', 'libx264',
+                '-preset', 'ultrafast',
+                '-c:a', 'aac',
+                'output.mp4'
+            ]);
+
+            statusDiv.innerText = "¡Video generado con éxito!";
+            
+            const data = await ffmpeg.readFile('output.mp4');
+            const blob = new Blob([data.buffer], { type: 'video/mp4' });
+            const url = URL.createObjectURL(blob);
+            
+            downloadLink.href = url;
+            downloadContainer.style.display = 'block';
+
+        } catch (error) {
+            console.error(error);
+            statusDiv.innerText = "Ocurrió un error en el procesamiento. Abre la consola (F12) para más detalles.";
+            processBtn.disabled = false;
+        }
+    });
+</script>
+
+</body>
+</html>
