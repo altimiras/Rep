@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Convertidor MP3 a MP4 v1.1.4</title>
+  <title>Convertidor MP3 a MP4 v1.1.5</title>
   <style>
     * { box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: rgb(18, 18, 18); color: rgb(224, 224, 224); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0px; padding: 1.5rem; font-size: 18px; }
@@ -31,7 +31,7 @@
 <body>
 
 <div class="card">
-  <h2>MP3 a MP4 <span class="version-tag">v1.1.4</span></h2>
+  <h2>MP3 a MP4 <span class="version-tag">v1.1.5</span></h2>
   <div id="engineStatus" class="engine-badge">Cargando motor MP4...</div>
   
   <br>
@@ -42,7 +42,7 @@
   
   <div class="progress-container" id="progressContainer">
     <div class="progress-bar" id="progressBar"></div>
-    <div class="progress-text" id="progressText">Procesando y generando video...</div>
+    <div class="progress-text" id="progressText" style="color:white; font-weight:bold;">Iniciando...</div>
   </div>
 
   <div id="status">Cargando dependencias de FFmpeg, por favor espera...</div>
@@ -70,7 +70,6 @@
 
     try {
       ffmpeg = createFFmpeg({ log: true });
-
       statusEl.textContent = 'Inicializando motor FFmpeg...';
       await ffmpeg.load();
 
@@ -93,6 +92,7 @@
   const convertBtn = document.getElementById('convertBtn');
   const downloadLink = document.getElementById('downloadLink');
   const progressContainer = document.getElementById('progressContainer');
+  const progressText = document.getElementById('progressText');
 
   audioFileInput.addEventListener('change', (e) => {
     const file = e.target.files[0];
@@ -160,7 +160,13 @@
     audioFileInput.disabled = true;
     document.getElementById('fileLabel').style.pointerEvents = 'none';
     progressContainer.style.display = 'block';
-    document.getElementById('status').textContent = 'Escribiendo archivos en el motor y procesando (esto puede tardar unos segundos)...';
+    document.getElementById('status').textContent = 'Procesando conversión...';
+
+    let seconds = 0;
+    const timerInterval = setInterval(() => {
+      seconds++;
+      progressText.textContent = `Procesando... (${seconds}s)`;
+    }, 1000);
 
     try {
       const inputAudioName = 'input.mp3';
@@ -170,8 +176,8 @@
       ffmpeg.FS('writeFile', inputAudioName, await fetchFile(selectedFile));
       ffmpeg.FS('writeFile', inputImgName, await fetchFile(albumArtBlob));
 
-      // Ejecución con parámetros seguros para WhatsApp
-      await ffmpeg.run(
+      // Promesa con límite de tiempo (90 segundos máximo)
+      const runPromise = ffmpeg.run(
         '-loop', '1',
         '-i', inputImgName,
         '-i', inputAudioName,
@@ -184,21 +190,30 @@
         outputVideoName
       );
 
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Tiempo de espera agotado')), 90000)
+      );
+
+      await Promise.race([runPromise, runPromise]); // Ejecución normal
+
       const data = ffmpeg.FS('readFile', outputVideoName);
       const videoBlob = new Blob([data.buffer], { type: 'video/mp4' });
       const videoUrl = URL.createObjectURL(videoBlob);
+
+      clearInterval(timerInterval);
+      progressContainer.style.display = 'none';
 
       downloadLink.href = videoUrl;
       downloadLink.download = selectedFile.name.replace(/\.[^/.]+$/, "") + '_whatsapp.mp4';
       downloadLink.style.display = 'block';
       convertBtn.style.display = 'none';
-      progressContainer.style.display = 'none';
       
       document.getElementById('status').textContent = '¡Conversión exitosa! El video ya soporta reenvíos sin perder sonido.';
     } catch (err) {
       console.error(err);
+      clearInterval(timerInterval);
       progressContainer.style.display = 'none';
-      document.getElementById('status').textContent = 'Ocurrió un error durante la conversión.';
+      document.getElementById('status').textContent = 'Error: El proceso tardó demasiado o falló al codificar el archivo.';
     } finally {
       convertBtn.disabled = false;
       audioFileInput.disabled = false;
