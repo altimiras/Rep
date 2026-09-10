@@ -1,10 +1,10 @@
-<!-- VERSION: 1.1.6 - Original optimizado para WhatsApp -->
+<!-- VERSION: 1.1.7 - Original funcional con progreso real y optimizado para WhatsApp -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Convertidor MP3 a MP4 v1.1.6</title>
+  <title>Convertidor MP3 a MP4 v1.1.7</title>
   <style>
     * { box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: rgb(18, 18, 18); color: rgb(224, 224, 224); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0px; padding: 1.5rem; font-size: 18px; }
@@ -18,12 +18,7 @@
     .engine-badge { display: inline-block; padding: 8px 18px; border-radius: 20px; font-size: 1rem; font-weight: bold; margin-bottom: 1.5rem; background: rgb(55, 65, 81); color: rgb(156, 163, 175); }
     .engine-badge.ready { background: rgb(6, 95, 70); color: rgb(52, 211, 153); }
     .progress-container { width: 100%; background-color: rgb(55, 65, 81); border-radius: 12px; overflow: hidden; margin-top: 1.5rem; display: none; height: 28px; position: relative; }
-    .progress-bar { width: 0%; height: 100%; background-color: rgb(16, 185, 129); transition: width 0.2s linear; }
-    .progress-bar.working { background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent); background-size: 40px 40px; animation: 1s linear 0s infinite normal none running barStripes; }
-    @keyframes barStripes { 
-      0% { background-position: 0px 0px; }
-      100% { background-position: 40px 0px; }
-    }
+    .progress-bar { width: 0%; height: 100%; background-color: rgb(16, 185, 129); transition: width 0.1s linear; }
     .progress-text { position: absolute; width: 100%; top: 0px; left: 0px; font-size: 1rem; font-weight: bold; line-height: 28px; color: rgb(255, 255, 255); text-shadow: rgba(0, 0, 0, 0.9) 0px 1px 3px; }
     #status { margin-top: 1.5rem; font-size: 1.1rem; color: rgb(203, 213, 225); word-break: break-all; }
     #preview { max-width: 260px; width: 100%; border-radius: 12px; display: none; margin: 1.5rem auto 0px; object-fit: cover; }
@@ -33,7 +28,7 @@
 <body>
 
 <div class="card">
-  <h2>MP3 a MP4 <span class="version-tag">v1.1.6</span></h2>
+  <h2>MP3 a MP4 <span class="version-tag">v1.1.7</span></h2>
   <div id="engineStatus" class="engine-badge">Cargando motor MP4...</div>
   
   <br>
@@ -46,7 +41,6 @@
     <div class="progress-bar" id="progressBar"></div>
     <div class="progress-text" id="progressText">0%</div>
   </div>
-  <div id="elapsedTime" style="margin-top: 0.5rem; font-size: 0.95rem; color: #94a3b8; display: none;"></div>
 
   <div id="status">Cargando dependencias, por favor espera...</div>
   
@@ -56,7 +50,7 @@
   <canvas id="canvas" width="1080" height="1080"></canvas>
 </div>
 
-<!-- Scripts de tu versión original que sí cargaban correctamente -->
+<!-- Librerías estables -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js"></script>
 <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.10.0/dist/ffmpeg.min.js"></script>
 
@@ -162,9 +156,16 @@
     audioFileInput.disabled = true;
     document.getElementById('fileLabel').style.pointerEvents = 'none';
     progressContainer.style.display = 'block';
-    progressBar.style.width = '20%';
-    progressText.textContent = 'Procesando...';
-    document.getElementById('status').textContent = 'Generando video compatible con reenvíos...';
+    progressBar.style.width = '0%';
+    progressText.textContent = '0%';
+    document.getElementById('status').textContent = 'Procesando video...';
+
+    // Capturador de progreso real de FFmpeg 0.10.x
+    ffmpeg.setProgress(({ ratio }) => {
+      const percent = Math.max(0, Math.min(100, Math.round(ratio * 100)));
+      progressBar.style.width = percent + '%';
+      progressText.textContent = percent + '%';
+    });
 
     try {
       const inputAudioName = 'input.mp3';
@@ -174,9 +175,7 @@
       ffmpeg.FS('writeFile', inputAudioName, await fetchFile(selectedFile));
       ffmpeg.FS('writeFile', inputImgName, await fetchFile(albumArtBlob));
 
-      progressBar.style.width = '50%';
-
-      // AQUÍ ESTÁ LA CLAVE: Añadidos '-c:a', 'aac' y '-pix_fmt', 'yuv420p' para que el audio no muera al reenviar en WhatsApp
+      // Ejecución con parámetros exactos para compatibilidad total al reenviar en WhatsApp
       await ffmpeg.run(
         '-loop', '1',
         '-i', inputImgName,
@@ -190,8 +189,6 @@
         outputVideoName
       );
 
-      progressBar.style.width = '90%';
-
       const data = ffmpeg.FS('readFile', outputVideoName);
       const videoBlob = new Blob([data.buffer], { type: 'video/mp4' });
       const videoUrl = URL.createObjectURL(videoBlob);
@@ -202,7 +199,7 @@
       convertBtn.style.display = 'none';
       progressContainer.style.display = 'none';
 
-      document.getElementById('status').textContent = '¡Conversión exitosa! Ya puedes reenviar este video sin perder el audio.';
+      document.getElementById('status').textContent = '¡Conversión exitosa! Ya puedes reenviar este video sin problemas.';
     } catch (err) {
       console.error(err);
       progressContainer.style.display = 'none';
