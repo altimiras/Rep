@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Convertidor MP3 a MP4 v1.1.3</title>
+  <title>Convertidor MP3 a MP4 v1.1.4</title>
   <style>
     * { box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: rgb(18, 18, 18); color: rgb(224, 224, 224); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0px; padding: 1.5rem; font-size: 18px; }
@@ -17,7 +17,11 @@
     .engine-badge { display: inline-block; padding: 8px 18px; border-radius: 20px; font-size: 1rem; font-weight: bold; margin-bottom: 1.5rem; background: rgb(55, 65, 81); color: rgb(156, 163, 175); }
     .engine-badge.ready { background: rgb(6, 95, 70); color: rgb(52, 211, 153); }
     .progress-container { width: 100%; background-color: rgb(55, 65, 81); border-radius: 12px; overflow: hidden; margin-top: 1.5rem; display: none; height: 28px; position: relative; }
-    .progress-bar { width: 0%; height: 100%; background-color: rgb(16, 185, 129); transition: width 0.2s linear; }
+    .progress-bar { width: 100%; height: 100%; background-color: rgb(16, 185, 129); background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent); background-size: 40px 40px; animation: 1s linear 0s infinite normal none running barStripes; }
+    @keyframes barStripes { 
+      0% { background-position: 0px 0px; }
+      100% { background-position: 40px 0px; }
+    }
     .progress-text { position: absolute; width: 100%; top: 0px; left: 0px; font-size: 1rem; font-weight: bold; line-height: 28px; color: rgb(255, 255, 255); text-shadow: rgba(0, 0, 0, 0.9) 0px 1px 3px; }
     #status { margin-top: 1.5rem; font-size: 1.1rem; color: rgb(203, 213, 225); word-break: break-all; }
     #preview { max-width: 260px; width: 100%; border-radius: 12px; display: none; margin: 1.5rem auto 0px; object-fit: cover; }
@@ -27,7 +31,7 @@
 <body>
 
 <div class="card">
-  <h2>MP3 a MP4 <span class="version-tag">v1.1.3</span></h2>
+  <h2>MP3 a MP4 <span class="version-tag">v1.1.4</span></h2>
   <div id="engineStatus" class="engine-badge">Cargando motor MP4...</div>
   
   <br>
@@ -38,7 +42,7 @@
   
   <div class="progress-container" id="progressContainer">
     <div class="progress-bar" id="progressBar"></div>
-    <div class="progress-text" id="progressText">0%</div>
+    <div class="progress-text" id="progressText">Procesando y generando video...</div>
   </div>
 
   <div id="status">Cargando dependencias de FFmpeg, por favor espera...</div>
@@ -51,7 +55,6 @@
 
 <!-- Librerías de soporte -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js"></script>
-<!-- FFmpeg versión compatible con carga directa en GitHub Pages -->
 <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
 
 <script>
@@ -66,7 +69,6 @@
     const fileLabel = document.getElementById('fileLabel');
 
     try {
-      // Usamos log: true para ver el progreso detallado en la consola si hiciera falta
       ffmpeg = createFFmpeg({ log: true });
 
       statusEl.textContent = 'Inicializando motor FFmpeg...';
@@ -80,7 +82,7 @@
     } catch (err) {
       console.error(err);
       engineBadge.textContent = 'Error en el Motor';
-      statusEl.textContent = 'Error al cargar FFmpeg. Revisa tu conexión a internet o la consola.';
+      statusEl.textContent = 'Error al cargar FFmpeg. Revisa tu conexión a internet.';
     }
   }
 
@@ -158,9 +160,7 @@
     audioFileInput.disabled = true;
     document.getElementById('fileLabel').style.pointerEvents = 'none';
     progressContainer.style.display = 'block';
-    document.getElementById('progressBar').style.width = '50%';
-    document.getElementById('progressText').textContent = 'Procesando...';
-    document.getElementById('status').textContent = 'Convirtiendo con compatibilidad total para WhatsApp...';
+    document.getElementById('status').textContent = 'Escribiendo archivos en el motor y procesando (esto puede tardar unos segundos)...';
 
     try {
       const inputAudioName = 'input.mp3';
@@ -170,7 +170,7 @@
       ffmpeg.FS('writeFile', inputAudioName, await fetchFile(selectedFile));
       ffmpeg.FS('writeFile', inputImgName, await fetchFile(albumArtBlob));
 
-      // Ejecución con los parámetros exactos para que el audio no muera al reenviar en WhatsApp
+      // Ejecución con parámetros seguros para WhatsApp
       await ffmpeg.run(
         '-loop', '1',
         '-i', inputImgName,
@@ -192,12 +192,12 @@
       downloadLink.download = selectedFile.name.replace(/\.[^/.]+$/, "") + '_whatsapp.mp4';
       downloadLink.style.display = 'block';
       convertBtn.style.display = 'none';
+      progressContainer.style.display = 'none';
       
-      document.getElementById('progressBar').style.width = '100%';
-      document.getElementById('progressText').textContent = '100%';
       document.getElementById('status').textContent = '¡Conversión exitosa! El video ya soporta reenvíos sin perder sonido.';
     } catch (err) {
       console.error(err);
+      progressContainer.style.display = 'none';
       document.getElementById('status').textContent = 'Ocurrió un error durante la conversión.';
     } finally {
       convertBtn.disabled = false;
