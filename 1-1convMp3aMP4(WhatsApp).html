@@ -1,0 +1,192 @@
+<!-- VERSION: 1.1.1 - Original funcional optimizado -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Convertidor MP3 a MP4 v1.1.1</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: rgb(18, 18, 18); color: rgb(224, 224, 224); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0px; padding: 1.5rem; font-size: 18px; }
+    .card { background: rgb(30, 30, 30); padding: 2.5rem 2rem; border-radius: 16px; box-shadow: rgba(0, 0, 0, 0.6) 0px 12px 32px; width: 100%; max-width: 640px; text-align: center; }
+    .version-tag { display: inline-block; background: rgb(37, 99, 235); color: rgb(255, 255, 255); font-size: 0.85rem; font-weight: bold; padding: 4px 10px; border-radius: 6px; vertical-align: middle; margin-left: 8px; }
+    h2 { margin-top: 0px; color: rgb(255, 255, 255); font-size: 2rem; display: flex; align-items: center; justify-content: center; }
+    input[type="file"] { display: none; }
+    .btn { display: block; background: rgb(59, 130, 246); color: white; padding: 18px 24px; border-radius: 12px; cursor: pointer; font-weight: bold; font-size: 1.25rem; margin-top: 1.5rem; border: none; width: 100%; text-decoration: none; text-align: center; }
+    .btn:hover { background: rgb(37, 99, 235); }
+    .btn:disabled { background: rgb(75, 85, 99); cursor: not-allowed; opacity: 0.7; }
+    .engine-badge { display: inline-block; padding: 8px 18px; border-radius: 20px; font-size: 1rem; font-weight: bold; margin-bottom: 1.5rem; background: rgb(55, 65, 81); color: rgb(156, 163, 175); }
+    .engine-badge.ready { background: rgb(6, 95, 70); color: rgb(52, 211, 153); }
+    #status { margin-top: 1.5rem; font-size: 1.1rem; color: rgb(203, 213, 225); word-break: break-all; }
+    #preview { max-width: 260px; width: 100%; border-radius: 12px; display: none; margin: 1.5rem auto 0px; object-fit: cover; }
+    canvas { display: none; }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <h2>MP3 a MP4 <span class="version-tag">v1.1.1</span></h2>
+  <div id="engineStatus" class="engine-badge">Cargando motor MP4...</div>
+  
+  <br>
+  <label for="audioFile" id="fileLabel" class="btn" style="opacity: 0.5; pointer-events: none;">Seleccionar Archivo MP3</label>
+  <input type="file" id="audioFile" accept="audio/mp3, audio/*">
+  
+  <img id="preview" alt="Carátula detectada">
+  
+  <div id="status">Cargando dependencias, por favor espera...</div>
+  
+  <button id="convertBtn" class="btn" style="background: #10b981; display: none;">Convertir a MP4</button>
+  <a id="downloadLink" class="btn" style="background: #8b5cf6; display: none;">Descargar Video (.mp4)</a>
+  
+  <canvas id="canvas" width="640" height="640"></canvas>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js"></script>
+<script src="https://unpkg.com/@ffmpeg/ffmpeg@0.10.0/dist/ffmpeg.min.js"></script>
+
+<script>
+  const { createFFmpeg, fetchFile } = FFmpeg;
+  const ffmpeg = createFFmpeg({ log: true });
+
+  let selectedFile = null;
+  let albumArtBlob = null;
+
+  async function init() {
+    const statusEl = document.getElementById('status');
+    const engineBadge = document.getElementById('engineStatus');
+    const fileLabel = document.getElementById('fileLabel');
+
+    try {
+      await ffmpeg.load();
+      engineBadge.textContent = 'Motor MP4 Listo';
+      engineBadge.classList.add('ready');
+      statusEl.textContent = 'Selecciona un archivo MP3 para comenzar.';
+      fileLabel.style.opacity = '1';
+      fileLabel.style.pointerEvents = 'auto';
+    } catch (err) {
+      console.error(err);
+      engineBadge.textContent = 'Error en el Motor';
+      statusEl.textContent = 'No se pudo cargar el motor.';
+    }
+  }
+
+  init();
+
+  const audioFileInput = document.getElementById('audioFile');
+  const previewImg = document.getElementById('preview');
+  const convertBtn = document.getElementById('convertBtn');
+  const downloadLink = document.getElementById('downloadLink');
+
+  audioFileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    selectedFile = file;
+    document.getElementById('fileLabel').textContent = file.name;
+    document.getElementById('status').textContent = 'Leyendo metadatos del MP3...';
+
+    jsmediatags.read(file, {
+      onSuccess: function(tag) {
+        const image = tag.tags.picture;
+        if (image) {
+          let base64String = "";
+          for (let i = 0; i < image.data.length; i++) {
+            base64String += String.fromCharCode(image.data[i]);
+          }
+          const base64 = "data:" + image.format + ";base64," + window.btoa(base64String);
+          previewImg.src = base64;
+          previewImg.style.display = 'block';
+          
+          fetch(base64)
+            .then(res => res.blob())
+            .then(blob => { albumArtBlob = blob; });
+        } else {
+          createDefaultCover(file.name);
+        }
+        document.getElementById('status').textContent = 'Archivo listo para convertir.';
+        convertBtn.style.display = 'block';
+        downloadLink.style.display = 'none';
+      },
+      onError: function() {
+        createDefaultCover(file.name);
+        document.getElementById('status').textContent = 'Archivo listo (portada por defecto).';
+        convertBtn.style.display  = 'block';
+        downloadLink.style.display = 'none';
+      }
+    });
+  });
+
+  function createDefaultCover(title) {
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#1e293b';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 36px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('AUDIO MP3', canvas.width / 2, canvas.height / 2 - 30);
+    ctx.font = '22px sans-serif';
+    ctx.fillStyle = '#94a3b8';
+    ctx.fillText(title.substring(0, 35), canvas.width / 2, canvas.height / 2 + 30);
+
+    canvas.toBlob((blob) => {
+      albumArtBlob = blob;
+      previewImg.src = URL.createObjectURL(blob);
+      previewImg.style.display = 'block';
+    }, 'image/jpeg', 0.90);
+  }
+
+  convertBtn.addEventListener('click', async () => {
+    if (!selectedFile || !albumArtBlob) return;
+
+    convertBtn.disabled = true;
+    audioFileInput.disabled = true;
+    document.getElementById('fileLabel').style.pointerEvents = 'none';
+    document.getElementById('status').textContent = 'Convirtiendo... (esto tomará solo unos segundos)';
+
+    try {
+      const inputAudioName = 'input.mp3';
+      const inputImgName = 'input.jpg';
+      const outputVideoName = 'output.mp4';
+
+      ffmpeg.FS('writeFile', inputAudioName, await fetchFile(selectedFile));
+      ffmpeg.FS('writeFile', inputImgName, await fetchFile(albumArtBlob));
+
+      // Comando ultra ligero y directo que usa tasa de refresco fija para evitar bloqueos
+      await ffmpeg.run(
+        '-loop', '1',
+        '-r', '2',
+        '-i', inputImgName,
+        '-i', inputAudioName,
+        '-c:v', 'libx264',
+        '-tune', 'stillimage',
+        '-c:a', 'aac',
+        '-pix_fmt', 'yuv420p',
+        '-shortest',
+        outputVideoName
+      );
+
+      const data = ffmpeg.FS('readFile', outputVideoName);
+      const videoBlob = new Blob([data.buffer], { type: 'video/mp4' });
+      const videoUrl = URL.createObjectURL(videoBlob);
+
+      downloadLink.href = videoUrl;
+      downloadLink.download = selectedFile.name.replace(/\.[^/.]+$/, "") + '_convertido.mp4';
+      downloadLink.style.display = 'block';
+      convertBtn.style.display = 'none';
+
+      document.getElementById('status').textContent = '¡Conversión completada con éxito!';
+    } catch (err) {
+      console.error(err);
+      document.getElementById('status').textContent = 'Ocurrió un error durante la conversión.';
+    } finally {
+      convertBtn.disabled = false;
+      audioFileInput.disabled = false;
+      document.getElementById('fileLabel').style.pointerEvents = 'auto';
+    }
+  });
+</script>
+
+</body>
+</html>
