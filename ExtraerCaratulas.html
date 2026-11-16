@@ -115,25 +115,59 @@ function readCover(file){
   });
 }
 
-function toJpg(bytes,maxW){
-  var isJpg=bytes[0]===255&&bytes[1]===216;
+function viaImg(blob){
   return new Promise(function(res,rej){
-    var url=URL.createObjectURL(new Blob([bytes])),img=new Image();
+    var url=URL.createObjectURL(blob),img=new Image();
     img.onload=function(){
-      URL.revokeObjectURL(url);
-      var w=img.naturalWidth,h=img.naturalHeight,big=maxW>0&&w>maxW;
-      if(isJpg&&!big){res({bytes:bytes,w:w,h:h});return}
-      var k=big?maxW/w:1,cw=Math.round(w*k),ch=Math.round(h*k),c=document.createElement("canvas");
-      c.width=cw;c.height=ch;
-      var x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,cw,ch);x.drawImage(img,0,0,cw,ch);
-      c.toBlob(function(bl){
-        if(!bl){rej(new Error("no se pudo convertir"));return}
-        bl.arrayBuffer().then(function(ab){res({bytes:new Uint8Array(ab),w:cw,h:ch})});
-      },"image/jpeg",0.88);
+      (img.decode?img.decode():Promise.resolve()).catch(function(){}).then(function(){res({src:img,w:img.naturalWidth,h:img.naturalHeight,url:url})});
     };
     img.onerror=function(){URL.revokeObjectURL(url);rej(new Error("imagen no reconocida"))};
     img.src=url;
   });
+}
+function decode(blob){
+  if(!window.createImageBitmap)return viaImg(blob);
+  return createImageBitmap(blob).then(function(b){return {src:b,w:b.width,h:b.height}});
+}
+function clean(d){if(d.url)URL.revokeObjectURL(d.url);if(d.src.close)d.src.close()}
+function draw(d,maxW){
+  var big=maxW>0&&d.w>maxW,k=big?maxW/d.w:1,cw=Math.max(1,Math.round(d.w*k)),ch=Math.max(1,Math.round(d.h*k));
+  var c=document.createElement("canvas");c.width=cw;c.height=ch;
+  var x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,cw,ch);x.imageSmoothingQuality="high";x.drawImage(d.src,0,0,cw,ch);
+  return c;
+}
+function blank(c){
+  var x=c.getContext("2d"),w=c.width,h=c.height,i,j,p;
+  for(i=0;i<12;i++)for(j=0;j<12;j++){
+    p=x.getImageData(Math.min(w-1,Math.floor((i+.5)*w/12)),Math.min(h-1,Math.floor((j+.5)*h/12)),1,1).data;
+    if(p[0]<250||p[1]<250||p[2]<250)return false;
+  }
+  return true;
+}
+function enc(c){
+  return new Promise(function(res,rej){
+    c.toBlob(function(b){b?b.arrayBuffer().then(function(a){res(new Uint8Array(a))}):rej(new Error("no se pudo convertir"))},"image/jpeg",0.88);
+  });
+}
+function toJpg(bytes,maxW){
+  var isJpg=bytes[0]===255&&bytes[1]===216,blob=new Blob([bytes]);
+  function attempt(load,tag){
+    return load().then(function(d){
+      var big=maxW>0&&d.w>maxW;
+      log("Imagen "+d.w+"×"+d.h+" ("+(isJpg?"JPEG":"otro formato")+", "+tag+")");
+      if(isJpg&&!big){clean(d);return {bytes:bytes,w:d.w,h:d.h}}
+      var c=draw(d,maxW);clean(d);
+      if(blank(c))throw new Error("el lienzo salió en blanco");
+      return enc(c).then(function(b){return {bytes:b,w:c.width,h:c.height}});
+    });
+  }
+  return attempt(function(){return decode(blob)},"bitmap")
+    .catch(function(e){log("Reintento: "+e.message);return attempt(function(){return viaImg(blob)},"img")})
+    .catch(function(e){
+      log("Fallo al reducir: "+e.message);
+      if(isJpg)return {bytes:bytes,w:0,h:0,orig:true};
+      throw new Error("no se pudo convertir la imagen");
+    });
 }
 
 var crcT=(function(){var t=[],c,n,k;for(n=0;n<256;n++){c=n;for(k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
@@ -202,7 +236,7 @@ function go(){
       return toJpg(c.data,maxW).then(function(r){
         var nm=safe(f.name);if(names[nm]){var k=2;while(names[nm.replace(/\.jpg$/,"")+" ("+k+").jpg"])k++;nm=nm.replace(/\.jpg$/,"")+" ("+k+").jpg"}
         names[nm]=1;ok.push({name:nm,bytes:r.bytes});
-        row(nm,r.w+"×"+r.h+" · "+Math.round(r.bytes.length/1024)+" KB","",r.bytes);
+        row(nm,(r.w?r.w+"×"+r.h+" · ":"")+Math.round(r.bytes.length/1024)+" KB"+(r.orig?" · original, no se pudo reducir":""),r.orig?"err":"",r.bytes);
       });
     }).catch(function(e){fail++;row(f.name,"error: "+e.message,"err");log("Error en "+f.name+": "+e.message)}).then(next);
   })();
