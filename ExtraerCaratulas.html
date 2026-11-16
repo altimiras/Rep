@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Extraer carátulas</title>
+<style>
+:root{--bg:#eef1f5;--panel:#fff;--ink:#1b2433;--mute:#5d6878;--line:#cfd6e0;--acc:#1f6f8b;--acc-ink:#fff;--bad:#b3362b;--ok:#2e7d4f}
+@media (prefers-color-scheme:dark){:root{--bg:#141a24;--panel:#1d2532;--ink:#e8edf4;--mute:#9aa6b8;--line:#334055;--acc:#4aa3c4;--acc-ink:#0d1620;--bad:#ff8a7d;--ok:#6fcf97}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:12px 12px 40px}
+main{max-width:640px;margin:0 auto}
+h1{font-size:1.35rem;margin:4px 0 2px}h2{font-size:1.05rem;margin:0 0 10px}
+.sub{color:var(--mute);margin:0 0 14px;font-size:.92rem}
+section{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:14px}
+label{display:block;font-weight:600;font-size:.9rem;margin:10px 0 4px}
+label small{font-weight:400;color:var(--mute)}
+input,button{font:inherit;color:inherit}
+input[type=number],input[type=file]{width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+button{padding:11px 14px;border-radius:8px;border:1px solid var(--line);background:var(--panel);min-height:44px;cursor:pointer}
+button.main{background:var(--acc);color:var(--acc-ink);border-color:var(--acc);font-weight:600}
+button:disabled{opacity:.5}
+button:focus-visible,input:focus{outline:2px solid var(--acc);outline-offset:1px}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.msg{margin:10px 0 0;font-size:.92rem;min-height:1.3em}.msg.err{color:var(--bad)}.msg.ok{color:var(--ok)}
+ul{list-style:none;margin:0;padding:0}
+li{display:flex;gap:10px;align-items:center;border-top:1px solid var(--line);padding:8px 0}
+li:first-child{border-top:0}
+li img,li .ph{width:48px;height:48px;border-radius:6px;object-fit:cover;flex:none;background:var(--bg);border:1px solid var(--line)}
+.n{font-weight:600;word-break:break-word}.m{color:var(--mute);font-size:.85rem}.m.err{color:var(--bad)}
+ol{margin:6px 0 0;padding-left:20px;color:var(--mute);font-size:.92rem}
+details summary{cursor:pointer;font-weight:600;padding:6px 0}
+#diag{font:.78rem/1.4 ui-monospace,Menlo,monospace;max-height:220px;overflow:auto;white-space:pre-wrap;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px}
+</style>
+</head>
+<body>
+<main>
+<h1>Extraer carátulas de los mp3</h1>
+<p class="sub">Saca la imagen incrustada en cada mp3 y la guarda como <b>nombre-del-mp3.jpg</b>, lista para subir a GitHub.</p>
+
+<section>
+  <h2>1. Elige los mp3</h2>
+  <input type="file" id="files" accept=".mp3,audio/mpeg" multiple>
+  <label for="maxw">Ancho máximo de la imagen en px <small>(0 = tamaño original)</small></label>
+  <input type="number" id="maxw" value="600" min="0" inputmode="numeric">
+  <label for="grupo">Imágenes por ZIP <small>(GitHub acepta 100 archivos por subida desde el navegador)</small></label>
+  <input type="number" id="grupo" value="100" min="1" inputmode="numeric">
+  <div class="row"><button type="button" id="btnGo" class="main">Extraer carátulas</button></div>
+  <p class="msg" id="msg" role="status"></p>
+</section>
+
+<section>
+  <h2>2. Descarga</h2>
+  <div class="row" id="zips" style="margin-top:0"></div>
+  <p class="msg" id="msg2" role="status">Aquí aparecerán los ZIP cuando termine la extracción.</p>
+  <ol>
+    <li style="display:list-item;border:0;padding:0">Descomprime el ZIP en el teléfono (Archivos → toca el ZIP → Extraer).</li>
+    <li style="display:list-item;border:0;padding:0">En GitHub abre la carpeta de carátulas → Add file → Upload files y elige los .jpg.</li>
+  </ol>
+</section>
+
+<section>
+  <h2>Resultado (<span id="count">0</span>)</h2>
+  <ul id="lista"></ul>
+  <details style="margin-top:10px"><summary>Diagnóstico</summary><div id="diag"></div></details>
+</section>
+</main>
+
+<script>
+(function(){
+"use strict";
+var $=function(i){return document.getElementById(i)};
+var ok=[],urls=[],busy=false;
+function log(t){var d=$("diag");d.textContent+="["+new Date().toTimeString().slice(0,8)+"] "+t+"\n";d.scrollTop=d.scrollHeight}
+window.addEventListener("error",function(e){log("ERROR: "+e.message+" (línea "+e.lineno+")")});
+window.addEventListener("unhandledrejection",function(e){log("PROMESA: "+(e.reason&&e.reason.message||e.reason))});
+function say(id,t,c){var m=$(id);m.textContent=t;m.className="msg "+(c||"")}
+
+function ss(d,i){return ((d[i]&127)<<21)|((d[i+1]&127)<<14)|((d[i+2]&127)<<7)|(d[i+3]&127)}
+function u32(d,i){return d[i]*16777216+(d[i+1]<<16)+(d[i+2]<<8)+d[i+3]}
+function deun(b){var o=[];for(var i=0;i<b.length;i++){o.push(b[i]);if(b[i]===255&&b[i+1]===0)i++}return Uint8Array.from(o)}
+
+function parseApic(b){
+  if(b.length<6)return null;
+  var e=b[0],i=1;
+  while(i<b.length&&b[i]!==0)i++;
+  i++;var type=b[i++];
+  if(e===1||e===2){while(i+1<b.length&&!(b[i]===0&&b[i+1]===0))i+=2;i+=2}
+  else{while(i<b.length&&b[i]!==0)i++;i++}
+  var data=b.subarray(i);
+  return data.length>100?{type:type,data:data}:null;
+}
+function findApic(d){
+  if(d[3]<3)return {err:"etiqueta ID3v2."+d[3]+" no compatible"};
+  var v=d[3],end=Math.min(ss(d,6)+10,d.length),p=10,best=null;
+  if(d[5]&64)p+=v===4?ss(d,10):u32(d,10)+4;
+  while(p+10<=end){
+    var id=String.fromCharCode(d[p],d[p+1],d[p+2],d[p+3]);
+    if(!/^[A-Z0-9]{4}$/.test(id))break;
+    var fs=v===4?ss(d,p+4):u32(d,p+4),fl=d[p+9],b=d.subarray(p+10,Math.min(p+10+fs,d.length));
+    p+=10+fs;
+    if(id!=="APIC")continue;
+    if(v===4){if(fl&1)b=b.subarray(4);if(fl&2)b=deun(b)}
+    var a=parseApic(b);if(!a)continue;
+    if(a.type===3)return a;
+    if(!best)best=a;
+  }
+  return best;
+}
+function readCover(file){
+  return file.slice(0,10).arrayBuffer().then(function(b){
+    var h=new Uint8Array(b);
+    if(h.length<10||h[0]!==73||h[1]!==68||h[2]!==51)return {err:"sin etiqueta ID3"};
+    return file.slice(0,ss(h,6)+10).arrayBuffer().then(function(t){return findApic(new Uint8Array(t))});
+  });
+}
+
+function toJpg(bytes,maxW){
+  var isJpg=bytes[0]===255&&bytes[1]===216;
+  return new Promise(function(res,rej){
+    var url=URL.createObjectURL(new Blob([bytes])),img=new Image();
+    img.onload=function(){
+      URL.revokeObjectURL(url);
+      var w=img.naturalWidth,h=img.naturalHeight,big=maxW>0&&w>maxW;
+      if(isJpg&&!big){res({bytes:bytes,w:w,h:h});return}
+      var k=big?maxW/w:1,cw=Math.round(w*k),ch=Math.round(h*k),c=document.createElement("canvas");
+      c.width=cw;c.height=ch;
+      var x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,cw,ch);x.drawImage(img,0,0,cw,ch);
+      c.toBlob(function(bl){
+        if(!bl){rej(new Error("no se pudo convertir"));return}
+        bl.arrayBuffer().then(function(ab){res({bytes:new Uint8Array(ab),w:cw,h:ch})});
+      },"image/jpeg",0.88);
+    };
+    img.onerror=function(){URL.revokeObjectURL(url);rej(new Error("imagen no reconocida"))};
+    img.src=url;
+  });
+}
+
+var crcT=(function(){var t=[],c,n,k;for(n=0;n<256;n++){c=n;for(k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
+function crc(b){var c=0xFFFFFFFF;for(var i=0;i<b.length;i++)c=crcT[(c^b[i])&255]^(c>>>8);return (c^0xFFFFFFFF)>>>0}
+function zip(items){
+  var enc=new TextEncoder(),parts=[],cen=[],off=0,cs=0;
+  items.forEach(function(it){
+    var nm=enc.encode(it.name),c=crc(it.bytes),sz=it.bytes.length;
+    var l=new DataView(new ArrayBuffer(30));
+    l.setUint32(0,0x04034b50,true);l.setUint16(4,20,true);l.setUint16(6,0x0800,true);l.setUint16(12,0x21,true);
+    l.setUint32(14,c,true);l.setUint32(18,sz,true);l.setUint32(22,sz,true);l.setUint16(26,nm.length,true);
+    parts.push(new Uint8Array(l.buffer),nm,it.bytes);
+    var h=new DataView(new ArrayBuffer(46));
+    h.setUint32(0,0x02014b50,true);h.setUint16(4,20,true);h.setUint16(6,20,true);h.setUint16(8,0x0800,true);h.setUint16(14,0x21,true);
+    h.setUint32(16,c,true);h.setUint32(20,sz,true);h.setUint32(24,sz,true);h.setUint16(28,nm.length,true);h.setUint32(42,off,true);
+    cen.push(new Uint8Array(h.buffer),nm);
+    off+=30+nm.length+sz;cs+=46+nm.length;
+  });
+  var e=new DataView(new ArrayBuffer(22));
+  e.setUint32(0,0x06054b50,true);e.setUint16(8,items.length,true);e.setUint16(10,items.length,true);e.setUint32(12,cs,true);e.setUint32(16,off,true);
+  return new Blob(parts.concat(cen,[new Uint8Array(e.buffer)]),{type:"application/zip"});
+}
+function save(blob,name){
+  var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;
+  document.body.appendChild(a);a.click();
+  setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},2000);
+}
+
+function row(name,state,cls,bytes){
+  var li=document.createElement("li"),th;
+  if(bytes){th=document.createElement("img");var u=URL.createObjectURL(new Blob([bytes],{type:"image/jpeg"}));urls.push(u);th.src=u;th.alt=""}
+  else{th=document.createElement("div");th.className="ph"}
+  var d=document.createElement("div"),n=document.createElement("div"),m=document.createElement("div");
+  n.className="n";n.textContent=name;m.className="m "+(cls||"");m.textContent=state;
+  d.appendChild(n);d.appendChild(m);li.appendChild(th);li.appendChild(d);$("lista").appendChild(li);
+}
+function safe(n){return n.replace(/\.[^.]+$/,"").replace(/[\\\/:*?"<>|]/g,"_").trim()+".jpg"}
+
+function go(){
+  if(busy)return;
+  var files=Array.prototype.slice.call($("files").files);
+  if(!files.length){say("msg","Elige al menos un mp3.","err");return}
+  busy=true;$("btnGo").disabled=true;$("zips").innerHTML="";$("lista").innerHTML="";
+  urls.forEach(URL.revokeObjectURL);urls=[];ok=[];
+  var maxW=parseInt($("maxw").value,10)||0,i=0,sin=0,fail=0,names={};
+  function done(){
+    busy=false;$("btnGo").disabled=false;$("count").textContent=ok.length;
+    say("msg",ok.length+" carátulas extraídas, "+sin+" sin carátula, "+fail+" con error.",ok.length?"ok":"err");
+    log("Fin: "+ok.length+" ok, "+sin+" sin carátula, "+fail+" errores");
+    var g=Math.max(1,parseInt($("grupo").value,10)||100),nz=Math.ceil(ok.length/g);
+    for(var z=0;z<nz;z++)(function(z){
+      var part=ok.slice(z*g,z*g+g),nm=nz>1?"Caratulas_"+(z+1)+".zip":"Caratulas.zip";
+      var b=document.createElement("button");b.type="button";b.className="main";b.textContent="Descargar "+nm+" ("+part.length+")";
+      b.onclick=function(){
+        try{save(zip(part),nm);say("msg2",nm+" generado.","ok")}catch(e){say("msg2","No se pudo generar el ZIP: "+e.message,"err");log("ZIP falló: "+e.message)}
+      };
+      $("zips").appendChild(b);
+    })(z);
+    if(nz)say("msg2","Descarga cada ZIP y súbelo como se indica abajo.");
+  }
+  (function next(){
+    if(i>=files.length){done();return}
+    var f=files[i++];say("msg","Procesando "+i+" de "+files.length+": "+f.name);
+    readCover(f).then(function(c){
+      if(!c||c.err){sin++;row(f.name,c&&c.err?c.err:"sin carátula","err");log("Sin carátula: "+f.name+(c&&c.err?" ("+c.err+")":""));return}
+      return toJpg(c.data,maxW).then(function(r){
+        var nm=safe(f.name);if(names[nm]){var k=2;while(names[nm.replace(/\.jpg$/,"")+" ("+k+").jpg"])k++;nm=nm.replace(/\.jpg$/,"")+" ("+k+").jpg"}
+        names[nm]=1;ok.push({name:nm,bytes:r.bytes});
+        row(nm,r.w+"×"+r.h+" · "+Math.round(r.bytes.length/1024)+" KB","",r.bytes);
+      });
+    }).catch(function(e){fail++;row(f.name,"error: "+e.message,"err");log("Error en "+f.name+": "+e.message)}).then(next);
+  })();
+}
+$("btnGo").onclick=go;
+log("Listo. Chrome: "+(navigator.userAgent.match(/Chrome\/[\d.]+/)||["?"])[0]);
+})();
+</script>
+</body>
+</html>
