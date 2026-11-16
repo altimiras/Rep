@@ -59,6 +59,7 @@ details summary{cursor:pointer;font-weight:600;padding:6px 0}
   <div class="row">
     <button type="button" id="btnBulk">Agregar pendientes de este ritmo</button>
     <button type="button" id="btnBulkAll">Agregar todas las pendientes</button>
+    <button type="button" id="btnFix">Completar carátulas faltantes</button>
     <button type="button" id="btnStop" class="del" hidden>Detener</button>
   </div>
 </section>
@@ -104,10 +105,14 @@ details summary{cursor:pointer;font-weight:600;padding:6px 0}
   <input type="text" id="rama" value="main" autocomplete="off">
   <label for="ruta">Carpeta de los mp3</label>
   <input type="text" id="ruta" value="Mp3" autocomplete="off">
-  <label for="carp">Carpeta de carátulas <small>(en el mismo repositorio)</small></label>
+  <label for="repoCar">Repositorio de carátulas <small>(usuario/nombre)</small></label>
+  <input type="text" id="repoCar" value="altimiras/Radio" autocomplete="off">
+  <label for="ramaCar">Rama de carátulas</label>
+  <input type="text" id="ramaCar" value="main" autocomplete="off">
+  <label for="carp">Carpeta de carátulas</label>
   <input type="text" id="carp" value="imagenes" autocomplete="off">
   <label for="selCar">Carátula guardada como</label>
-  <select id="selCar"><option value="rel">Ruta relativa (imagenes/archivo.jpg)</option><option value="url">Enlace completo</option></select>
+  <select id="selCar"><option value="url">Enlace completo (raw.githubusercontent.com)</option><option value="rel">Ruta relativa (imagenes/archivo.jpg)</option></select>
   <label for="file">Continuar desde un playlist.json existente</label>
   <input type="file" id="file" accept=".json,application/json">
   <div class="row"><button type="button" id="btnClear" class="del">Vaciar lista</button></div>
@@ -141,7 +146,7 @@ function load(){
     var r=localStorage.getItem(KEY); if(!r){return}
     var o=JSON.parse(r); songs=Array.isArray(o.songs)?o.songs:[];
     if(o.version)$("version").value=o.version;
-    if(o.cfg)["repo","rama","ruta","carp","selCar"].forEach(function(k){if(o.cfg[k])$(k).value=o.cfg[k]});
+    if(o.cfg)["repo","rama","ruta","carp","repoCar","ramaCar","selCar"].forEach(function(k){if(o.cfg[k]&&!(k==="selCar"&&!o.cfg.repoCar))$(k).value=o.cfg[k]});
     log("Recuperadas "+songs.length+" canciones del guardado automático.");
   }catch(e){log("No se pudo leer el guardado: "+e.message)}
 }
@@ -269,18 +274,19 @@ $("btnClear").onclick=function(){
 };
 $("version").oninput=function(){save();$("prev").textContent=json()};
 
-var lib=[],CK="playlist_lib_v1",stop=false,tk=0;
-function cfg(){return {repo:$("repo").value.trim(),rama:$("rama").value.trim(),ruta:$("ruta").value.trim().replace(/^\/|\/$/g,""),carp:$("carp").value.trim().replace(/^\/|\/$/g,""),selCar:$("selCar").value}}
+var lib=[],CK="playlist_lib_v2",stop=false,tk=0;
+function cfg(){return {repo:$("repo").value.trim(),rama:$("rama").value.trim(),ruta:$("ruta").value.trim().replace(/^\/|\/$/g,""),carp:$("carp").value.trim().replace(/^\/|\/$/g,""),repoCar:$("repoCar").value.trim(),ramaCar:$("ramaCar").value.trim(),selCar:$("selCar").value}}
 function baseUrl(){var c=cfg();return "https://raw.githubusercontent.com/"+c.repo+"/"+c.rama+"/"+c.ruta+"/"}
 function urlOf(r,n){return baseUrl()+encodeURIComponent(r)+"/"+encodeURIComponent(n)}
 function nom(n){return n.replace(/\.[^.]+$/,"")}
+function key(n){return nom(n).normalize("NFC").toLowerCase()}
 function caratulaOf(g,f){
   if(!f.jpg)return null;
   var c=cfg();
-  return c.selCar==="rel"?c.carp+"/"+f.jpg:"https://raw.githubusercontent.com/"+c.repo+"/"+c.rama+"/"+c.carp+"/"+encodeURIComponent(f.jpg);
+  return c.selCar==="rel"?c.carp+"/"+f.jpg:"https://raw.githubusercontent.com/"+c.repoCar+"/"+c.ramaCar+"/"+c.carp+"/"+encodeURIComponent(f.jpg);
 }
 function have(g,f){var u=urlOf(g.r,f.n);return songs.some(function(s){return s.archivo===u})}
-function buildLib(paths){
+function buildLib(paths,cpaths){
   var ruta=cfg().ruta+"/",map={},jp={};
   paths.forEach(function(p){
     if(p.indexOf(ruta)!==0)return;
@@ -288,13 +294,13 @@ function buildLib(paths){
     if(/\.mp3$/i.test(a[1]))(map[a[0]]=map[a[0]]||[]).push(a[1]);
   });
   var cr=cfg().carp+"/";
-  paths.forEach(function(p){
+  cpaths.forEach(function(p){
     if(p.indexOf(cr)!==0)return;var n=p.slice(cr.length);
-    if(n.indexOf("/")<0&&/\.jpe?g$/i.test(n))jp[nom(n).toLowerCase()]=n;
+    if(n.indexOf("/")<0&&/\.jpe?g$/i.test(n))jp[key(n)]=n;
   });
   var cmp=function(x,y){return x.localeCompare(y,"es")};
   return Object.keys(map).sort(cmp).map(function(g){
-    return {r:g,f:map[g].sort(cmp).map(function(n){return {n:n,jpg:jp[nom(n).toLowerCase()]||null}})};
+    return {r:g,f:map[g].sort(cmp).map(function(n){return {n:n,jpg:jp[key(n)]||null}})};
   });
 }
 function opt(v,t){var o=document.createElement("option");o.value=v;o.textContent=t;return o}
@@ -312,23 +318,47 @@ function fillCanciones(){
 function restoreLib(){
   try{var c=localStorage.getItem(CK);if(c){lib=JSON.parse(c);fillRitmos();say("msg0","Última lectura guardada: "+lib.length+" ritmos. Toca Leer carpetas para actualizar.")}}catch(e){log("Sin biblioteca guardada: "+e.message)}
 }
-$("btnScan").onclick=function(){
-  var c=cfg();say("msg0","Leyendo carpetas…");
-  fetch("https://api.github.com/repos/"+c.repo+"/git/trees/"+encodeURIComponent(c.rama)+"?recursive=1").then(function(r){
-    if(!r.ok)throw new Error("GitHub respondió "+r.status+(r.status===403?" (límite de consultas, espera unos minutos)":""));
+function tree(repo,rama){
+  return fetch("https://api.github.com/repos/"+repo+"/git/trees/"+encodeURIComponent(rama)+"?recursive=1").then(function(r){
+    if(!r.ok)throw new Error(repo+": GitHub respondió "+r.status+(r.status===403?" (límite de consultas, espera unos minutos)":r.status===404?" (repositorio o rama no encontrados)":""));
     return r.json();
   }).then(function(d){
-    if(d.truncated)log("Aviso: GitHub devolvió una lista incompleta.");
-    lib=buildLib(d.tree.filter(function(t){return t.type==="blob"}).map(function(t){return t.path}));
+    if(d.truncated)log("Aviso: lista incompleta de "+repo);
+    return d.tree.filter(function(t){return t.type==="blob"}).map(function(t){return t.path});
+  });
+}
+$("btnScan").onclick=function(){
+  var c=cfg(),ce="";say("msg0","Leyendo carpetas…");
+  var same=c.repo===c.repoCar&&c.rama===c.ramaCar;
+  tree(c.repo,c.rama).then(function(mp){
+    if(same)return [mp,mp];
+    return tree(c.repoCar,c.ramaCar).catch(function(e){ce=" No se pudieron leer las carátulas: "+e.message;log("Carátulas: "+e.message);return []}).then(function(cp){return [mp,cp]});
+  }).then(function(x){
+    lib=buildLib(x[0],x[1]);
     try{localStorage.setItem(CK,JSON.stringify(lib))}catch(e){}
     fillRitmos();render();
     var n=lib.reduce(function(a,g){return a+g.f.length},0);
     var nc=lib.reduce(function(a,g){return a+g.f.filter(function(f){return f.jpg}).length},0);
-    say("msg0",lib.length+" ritmos y "+n+" canciones encontradas. Carátulas halladas en «"+cfg().carp+"»: "+nc+".","ok");log("Biblioteca: "+lib.length+" carpetas, "+n+" mp3");
+    say("msg0",lib.length+" ritmos y "+n+" canciones. Carátulas encontradas en «"+c.repoCar+"/"+c.carp+"»: "+nc+"."+ce,ce||!nc?"err":"ok");
+    log("Biblioteca: "+lib.length+" carpetas, "+n+" mp3, "+nc+" carátulas");
   }).catch(function(e){
     say("msg0",lib.length?"Sin conexión con GitHub. Se usa la última lectura guardada.":"No se pudo leer: "+e.message,"err");
     log("Lectura falló: "+e.message);
   });
+};
+$("btnFix").onclick=function(){
+  var k=0;
+  songs.forEach(function(s){
+    if(s.caratula)return;
+    var t=String(s.titulo).normalize("NFC").toLowerCase();
+    lib.forEach(function(g){
+      if(g.r!==s.ritmo)return;
+      g.f.forEach(function(f){if(f.jpg&&key(f.n)===t&&!s.caratula){s.caratula=caratulaOf(g,f);k++}});
+    });
+  });
+  render();
+  say("msg0",k?k+" carátulas completadas en la lista.":"No se completó ninguna. Primero toca Leer carpetas y revisa que encuentre carátulas.",k?"ok":"err");
+  log("Completar carátulas: "+k);
 };
 $("selRitmo").onchange=fillCanciones;
 $("selCancion").onchange=function(){
@@ -410,7 +440,7 @@ function bulk(all){
 $("btnBulk").onclick=function(){bulk(false)};
 $("btnBulkAll").onclick=function(){bulk(true)};
 $("btnStop").onclick=function(){stop=true;say("msg0","Deteniendo…")};
-["repo","rama","ruta","carp","selCar"].forEach(function(k){$(k).onchange=save});
+["repo","rama","ruta","carp","repoCar","ramaCar","selCar"].forEach(function(k){$(k).onchange=save});
 
 load();restoreLib();
 render();log("Listo. Chrome: "+(navigator.userAgent.match(/Chrome\/[\d.]+/)||["?"])[0]);
